@@ -7,11 +7,13 @@
 """Prometheus Scrape Target Charm.
 """
 
+import json
 import logging
 
 from ops.charm import CharmBase
 from ops.main import main
 from ops.model import ActiveStatus
+from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +39,52 @@ class PrometheusScrapeTargetCharm(CharmBase):
         """Setup Prometheus scrape configuration for external targets.
         """
         self.unit.status = ActiveStatus()
+        if not self.unit.is_leader():
+            return
+
+        jobs = self._scrape_jobs()
+        if not jobs:
+            return
+
+        for relation in self.model.relations[self._prometheus_relation]:
+            relation.data[self.app]["scrape_jobs"] = json.dumps(jobs)
+
+    def _scrape_jobs(self):
+        if not (targets := self.model.config.get("targets", "")):
+            return []
+
+        jobs = []
+        urls = targets.split(",")
+        for url in urls:
+            parsed_url = urlparse(url)
+
+            if not (parsed_url.netloc):
+                continue
+
+            job = {
+                "metrics_path": parsed_url.path if parsed_url.path else "/metrics",
+                "static_configs": [
+                    {
+                        "targets": [str(parsed_url.netloc)],
+                        "labels": self._labels()
+                    }
+                ]
+            }
+            jobs.append(job)
+
+        return jobs
+
+    def _labels(self):
+        if not (label_pairs := self.model.config.get("labels", "")):
+            return {}
+
+        labels = {}
+        for label in label_pairs:
+            key, value = label.split(":")
+            if key and value:
+                labels[key] = value
+
+        return labels
 
 
 if __name__ == "__main__":
