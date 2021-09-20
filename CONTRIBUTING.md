@@ -10,7 +10,7 @@ Create and activate a virtualenv with the development requirements:
 
 ## Code overview
 
-TEMPLATE-TODO: 
+TODO:
 One of the most important things a consumer of your charm (or library)
 needs to know is what set of functionality it provides. Which categories
 does it fit into? Which events do you listen to? Which libraries do you
@@ -18,7 +18,7 @@ consume? Which ones do you export and how are they used?
 
 ## Intended use case
 
-TEMPLATE-TODO:
+TODO:
 Why were these decisions made? What's the scope of your charm?
 
 ## Roadmap

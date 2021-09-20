@@ -1,23 +1,23 @@
-# Copyright 2021 Balbir Thomas
+# Copyright 2021 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 # For a complete list of supported options, see:
 # https://discourse.charmhub.io/t/charm-metadata-v2/3674/15
 name: prometheus-scrape-target
 display-name: |
-  TEMPLATE-TODO: fill out a display name for the Charmcraft store
+  prometheus-scrape-target-k8s
 description: |
-  TEMPLATE-TODO: fill out the charm's description
+  The Prometheus scrape target operator allows metrics endpoints outside any
+  Juju model to be scraped by the Prometheus charm.
 summary: |
-  TEMPLATE-TODO: fill out the charm's summary
-
-# TEMPLATE-TODO: replace with containers for your workload (delete for non-k8s)
+  An integrator for external metrics endpoints.
+provides:
+  metrics-endpoint:
+    interface: prometheus_scrape
 containers:
-  httpbin:
-    resource: httpbin-image
-
-# TEMPLATE-TODO: each container defined above must specify an oci-image resource
+  unused:
+    resource: unused-image
 resources:
-  httpbin-image:
+  unused-image:
     type: oci-image
-    description: OCI image for httpbin (kennethreitz/httpbin)
+    description: A dummy OCI image.
