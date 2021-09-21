@@ -13,7 +13,7 @@ import logging
 from ops.charm import CharmBase
 from ops.main import main
 from ops.model import ActiveStatus
-from urllib.parse import urlparse
+from urllib.parse import urlsplit
 
 logger = logging.getLogger(__name__)
 
@@ -53,38 +53,41 @@ class PrometheusScrapeTargetCharm(CharmBase):
         if not (targets := self.model.config.get("targets", "")):
             return []
 
-        jobs = []
         urls = targets.split(",")
-        for url in urls:
-            parsed_url = urlparse(url)
-
-            if not (parsed_url.netloc):
-                continue
-
-            job = {
-                "metrics_path": parsed_url.path if parsed_url.path else "/metrics",
+        jobs = [
+            {
+                "job_name": self._job_name(),
+                "metrics_path": self.model.config.get("metrics-path"),
                 "static_configs": [
                     {
-                        "targets": [str(parsed_url.netloc)],
+                        "targets": [str(urlsplit(url).netloc) for url in urls],
                         "labels": self._labels()
                     }
                 ]
             }
-            jobs.append(job)
+        ]
 
         return jobs
 
     def _labels(self):
-        if not (label_pairs := self.model.config.get("labels", "")):
+        if not (all_labels := self.model.config.get("labels", "")):
             return {}
 
         labels = {}
-        for label in label_pairs:
+        for label in all_labels.split(","):
             key, value = label.split(":")
             if key and value:
                 labels[key] = value
 
         return labels
+
+    def _job_name(self):
+        return "juju_{}_{}_{}_{}".format(
+            self.model.name,
+            self.model.uuid[:7],
+            self.app.name,
+            self.model.config.get('job_name')
+        )
 
 
 if __name__ == "__main__":

@@ -10,3 +10,11 @@ options:
   labels:
     description: Comma separted list of label:value pairs.
     type: string
+  job-name:
+    description: Name of external scrape configuration jobs.
+    type: string
+    default: "external_jobs"
+  metrics-path:
+    description: Metrics path for external jobs.
+    type: string
+    default: "/metrics"
