@@ -57,7 +57,7 @@ class PrometheusScrapeTargetCharm(CharmBase):
         jobs = [
             {
                 "job_name": self._job_name(),
-                "metrics_path": self.model.config.get("metrics-path"),
+                "metrics_path": self.model.config["metrics-path"],
                 "static_configs": [
                     {
                         "targets": [str(urlsplit(url).netloc) for url in urls],
@@ -86,7 +86,7 @@ class PrometheusScrapeTargetCharm(CharmBase):
             self.model.name,
             self.model.uuid[:7],
             self.app.name,
-            self.model.config.get('job_name')
+            self.model.config["job-name"]
         )
 
 
