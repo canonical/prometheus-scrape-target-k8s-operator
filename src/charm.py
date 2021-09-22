@@ -9,13 +9,16 @@
 
 import json
 import logging
+import re
 
 from ops.charm import CharmBase
 from ops.main import main
 from ops.model import ActiveStatus
-from urllib.parse import urlsplit
 
 logger = logging.getLogger(__name__)
+
+# default port for scrape targets
+DEFAULT_PORT = 80
 
 
 class PrometheusScrapeTargetCharm(CharmBase):
@@ -54,20 +57,49 @@ class PrometheusScrapeTargetCharm(CharmBase):
             return []
 
         urls = targets.split(",")
+        targets = []
+        for url in urls:
+            if not (valid_address := self._validated_address(url)):
+                continue
+            targets.append(valid_address)
+
         jobs = [
             {
                 "job_name": self._job_name(),
                 "metrics_path": self.model.config["metrics-path"],
                 "static_configs": [
                     {
-                        "targets": [str(urlsplit(url).netloc) for url in urls],
+                        "targets": targets,
                         "labels": self._labels()
                     }
                 ]
             }
-        ]
+        ] if targets else []
 
         return jobs
+
+    def _validated_address(self, address):
+        # split host and port parts
+        num_colons = address.count(":")
+        if num_colons > 1:
+            return ""
+        host, port = address.split(":") if num_colons else (address, DEFAULT_PORT)
+
+        # validate port
+        try:
+            port = int(port)
+        except ValueError:
+            return ""
+
+        if port < 0 or port > 2**16-1:
+            return ""
+
+        # validate host
+        match = re.search(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", host.strip())
+        if not match:
+            return ""
+        else:
+            return f"{match.group(0)}:{port}"
 
     def _labels(self):
         if not (all_labels := self.model.config.get("labels", "")):
