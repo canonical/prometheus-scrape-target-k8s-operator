@@ -53,6 +53,27 @@ class PrometheusScrapeTargetCharm(CharmBase):
             relation.data[self.app]["scrape_jobs"] = json.dumps(jobs)
 
     def _scrape_jobs(self):
+        targets = self._targets()
+
+        jobs = [
+            {
+                "job_name": self._job_name(),
+                "metrics_path": self.model.config["metrics-path"],
+                "static_configs": [
+                    {
+                        "targets": targets,
+                    }
+                ]
+            }
+        ] if targets else []
+
+        labels = self._labels()
+        if jobs and labels:
+            jobs[0]["static_configs"][0]["labels"] = labels
+
+        return jobs
+
+    def _targets(self):
         if not (targets := self.model.config.get("targets", "")):
             return []
 
@@ -68,20 +89,7 @@ class PrometheusScrapeTargetCharm(CharmBase):
         if invalid_targets:
             self.unit.status = BlockedStatus(f"Invalid targets : {invalid_targets}")
 
-        jobs = [
-            {
-                "job_name": self._job_name(),
-                "metrics_path": self.model.config["metrics-path"],
-                "static_configs": [
-                    {
-                        "targets": targets,
-                        "labels": self._labels()
-                    }
-                ]
-            }
-        ] if targets else []
-
-        return jobs
+        return targets
 
     def _validated_address(self, address):
         # split host and port parts
