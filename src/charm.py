@@ -13,7 +13,7 @@ import re
 
 from ops.charm import CharmBase
 from ops.main import main
-from ops.model import ActiveStatus
+from ops.model import ActiveStatus, BlockedStatus
 
 logger = logging.getLogger(__name__)
 
@@ -58,10 +58,15 @@ class PrometheusScrapeTargetCharm(CharmBase):
 
         urls = targets.split(",")
         targets = []
+        invalid_targets = []
         for url in urls:
             if not (valid_address := self._validated_address(url)):
+                invalid_targets.append(url)
                 continue
             targets.append(valid_address)
+
+        if invalid_targets:
+            self.unit.status = BlockedStatus(f"Invalid targets : {invalid_targets}")
 
         jobs = [
             {
@@ -106,10 +111,21 @@ class PrometheusScrapeTargetCharm(CharmBase):
             return {}
 
         labels = {}
+        invalid_labels = []
         for label in all_labels.split(","):
-            key, value = label.split(":")
+            try:
+                key, value = label.split(":")
+            except ValueError:
+                invalid_labels.append(label)
+                continue
+
             if key and value:
                 labels[key] = value
+            else:
+                invalid_labels.append(f"{key}:{value}")
+
+        if invalid_labels:
+            self.unit.status = BlockedStatus(f"Invalid labels : {invalid_labels}")
 
         return labels
 
