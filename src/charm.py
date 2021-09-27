@@ -9,11 +9,10 @@
 import logging
 import re
 
+from charms.prometheus_k8s.v0.prometheus_scrape import MetricsEndpointProvider
 from ops.charm import CharmBase
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus
-from charms.prometheus_k8s.v0.prometheus_scrape import MetricsEndpointProvider
-
 
 logger = logging.getLogger(__name__)
 
@@ -51,27 +50,25 @@ class PrometheusScrapeTargetCharm(CharmBase):
     def __init__(self, *args):
         super().__init__(*args)
 
-        self.metrics_endpoint = MetricsEndpointProvider(self, "metrics-endpoint",
-                                                        self.on.config_changed,
-                                                        jobs=self._scrape_jobs())
+        self.metrics_endpoint = MetricsEndpointProvider(
+            self, "metrics-endpoint", self.on.config_changed, jobs=self._scrape_jobs()
+        )
 
         self.unit.status = ActiveStatus()
 
     def _scrape_jobs(self):
         if targets := self._targets():
-            jobs = (
-                [
-                    {
-                        "job_name": self._job_name(),
-                        "metrics_path": self.model.config["metrics-path"],
-                        "static_configs": [
-                            {
-                                "targets": targets,
-                            }
-                        ],
-                    }
-                ]
-            )
+            jobs = [
+                {
+                    "job_name": self._job_name(),
+                    "metrics_path": self.model.config["metrics-path"],
+                    "static_configs": [
+                        {
+                            "targets": targets,
+                        }
+                    ],
+                }
+            ]
 
             if labels := self._labels():
                 jobs[0]["static_configs"][0]["labels"] = labels
