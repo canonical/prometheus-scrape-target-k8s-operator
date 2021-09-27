@@ -6,18 +6,43 @@
 
 """Prometheus Scrape Target Charm."""
 
-import json
 import logging
 import re
 
 from ops.charm import CharmBase
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus
+from charms.prometheus_k8s.v0.prometheus_scrape import MetricsEndpointProvider
+
 
 logger = logging.getLogger(__name__)
 
 # default port for scrape targets
 DEFAULT_METRICS_ENDPOINT_PORT = 80
+
+
+def _validated_address(address):
+    # split host and port parts
+    num_colons = address.count(":")
+    if num_colons > 1:
+        return ""
+    host, port = address.split(":") if num_colons else (address, DEFAULT_METRICS_ENDPOINT_PORT)
+
+    # validate port
+    try:
+        port = int(port)
+    except ValueError:
+        return ""
+
+    if port < 0 or port > 2 ** 16 - 1:
+        return ""
+
+    # validate host
+    match = re.search(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", host.strip())
+    if not match:
+        return ""
+    else:
+        return f"{match.group(0)}:{port}"
 
 
 class PrometheusScrapeTargetCharm(CharmBase):
@@ -26,56 +51,33 @@ class PrometheusScrapeTargetCharm(CharmBase):
     def __init__(self, *args):
         super().__init__(*args)
 
-        self._prometheus_relation = "metrics-endpoint"
+        self.metrics_endpoint = MetricsEndpointProvider(self, "metrics-endpoint",
+                                                        self.on.config_changed,
+                                                        jobs=self._scrape_jobs())
 
-        # handle changes in relation with Prometheus
-        self.framework.observe(
-            self.on[self._prometheus_relation].relation_joined, self._update_prometheus_jobs
-        )
-        self.framework.observe(
-            self.on[self._prometheus_relation].relation_changed, self._update_prometheus_jobs
-        )
-
-        # handle changes in external scrape targets
-        self.framework.observe(self.on.config_changed, self._update_prometheus_jobs)
-
-    def _update_prometheus_jobs(self, _):
-        """Setup Prometheus scrape configuration for external targets."""
         self.unit.status = ActiveStatus()
-        if not self.unit.is_leader():
-            return
-
-        jobs = self._scrape_jobs()
-        if not jobs:
-            return
-
-        for relation in self.model.relations[self._prometheus_relation]:
-            relation.data[self.app]["scrape_jobs"] = json.dumps(jobs)
 
     def _scrape_jobs(self):
-        targets = self._targets()
+        if targets := self._targets():
+            jobs = (
+                [
+                    {
+                        "job_name": self._job_name(),
+                        "metrics_path": self.model.config["metrics-path"],
+                        "static_configs": [
+                            {
+                                "targets": targets,
+                            }
+                        ],
+                    }
+                ]
+            )
 
-        jobs = (
-            [
-                {
-                    "job_name": self._job_name(),
-                    "metrics_path": self.model.config["metrics-path"],
-                    "static_configs": [
-                        {
-                            "targets": targets,
-                        }
-                    ],
-                }
-            ]
-            if targets
-            else []
-        )
+            if labels := self._labels():
+                jobs[0]["static_configs"][0]["labels"] = labels
 
-        labels = self._labels()
-        if jobs and labels:
-            jobs[0]["static_configs"][0]["labels"] = labels
-
-        return jobs
+            return jobs
+        return []
 
     def _targets(self):
         if not (targets := self.model.config.get("targets", "")):
@@ -85,7 +87,7 @@ class PrometheusScrapeTargetCharm(CharmBase):
         targets = []
         invalid_targets = []
         for url in urls:
-            if not (valid_address := self._validated_address(url)):
+            if not (valid_address := _validated_address(url)):
                 invalid_targets.append(url)
                 continue
             targets.append(valid_address)
@@ -94,29 +96,6 @@ class PrometheusScrapeTargetCharm(CharmBase):
             self.unit.status = BlockedStatus(f"Invalid targets : {invalid_targets}")
 
         return targets
-
-    def _validated_address(self, address):
-        # split host and port parts
-        num_colons = address.count(":")
-        if num_colons > 1:
-            return ""
-        host, port = address.split(":") if num_colons else (address, DEFAULT_METRICS_ENDPOINT_PORT)
-
-        # validate port
-        try:
-            port = int(port)
-        except ValueError:
-            return ""
-
-        if port < 0 or port > 2 ** 16 - 1:
-            return ""
-
-        # validate host
-        match = re.search(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", host.strip())
-        if not match:
-            return ""
-        else:
-            return f"{match.group(0)}:{port}"
 
     def _labels(self):
         if not (all_labels := self.model.config.get("labels", "")):
