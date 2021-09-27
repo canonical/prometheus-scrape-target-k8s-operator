@@ -16,3 +16,6 @@ class TestCharm(unittest.TestCase):
         self.harness = Harness(PrometheusScrapeTargetCharm)
         self.addCleanup(self.harness.cleanup)
         self.harness.begin()
+
+    def test_dummy(self):
+        pass
