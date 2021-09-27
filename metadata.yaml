@@ -5,12 +5,12 @@
 # https://discourse.charmhub.io/t/charm-metadata-v2/3674/15
 name: prometheus-scrape-target
 display-name: |
-  prometheus-scrape-target-k8s
-description: |
-  The Prometheus scrape target operator allows metrics endpoints outside any
-  Juju model to be scraped by the Prometheus charm.
+  Prometheus Scrape Target
 summary: |
-  An integrator for external metrics endpoints.
+  An integrator charm for external metrics endpoints.
+description: |
+  The Prometheus scrape target operator allows metrics endpoints outside
+  Juju to be scraped by the Prometheus charm.
 provides:
   metrics-endpoint:
     interface: prometheus_scrape
@@ -20,4 +20,4 @@ containers:
 resources:
   unused-image:
     type: oci-image
-    description: A dummy OCI image.
+    description: Unused OCI image for scrape target charm

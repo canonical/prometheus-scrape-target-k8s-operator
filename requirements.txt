@@ -1,1 +1,1 @@
-git+git://github.com/canonical/operator
+ops >= 1.2.0

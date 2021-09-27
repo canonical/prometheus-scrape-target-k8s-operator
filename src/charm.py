@@ -4,8 +4,7 @@
 #
 # Learn more at: https://juju.is/docs/sdk
 
-"""Prometheus Scrape Target Charm.
-"""
+"""Prometheus Scrape Target Charm."""
 
 import json
 import logging
@@ -18,7 +17,7 @@ from ops.model import ActiveStatus, BlockedStatus
 logger = logging.getLogger(__name__)
 
 # default port for scrape targets
-DEFAULT_PORT = 80
+DEFAULT_METRICS_ENDPOINT_PORT = 80
 
 
 class PrometheusScrapeTargetCharm(CharmBase):
@@ -30,17 +29,18 @@ class PrometheusScrapeTargetCharm(CharmBase):
         self._prometheus_relation = "metrics-endpoint"
 
         # handle changes in relation with Prometheus
-        self.framework.observe(self.on[self._prometheus_relation].relation_joined,
-                               self._update_prometheus_jobs)
-        self.framework.observe(self.on[self._prometheus_relation].relation_changed,
-                               self._update_prometheus_jobs)
+        self.framework.observe(
+            self.on[self._prometheus_relation].relation_joined, self._update_prometheus_jobs
+        )
+        self.framework.observe(
+            self.on[self._prometheus_relation].relation_changed, self._update_prometheus_jobs
+        )
 
         # handle changes in external scrape targets
         self.framework.observe(self.on.config_changed, self._update_prometheus_jobs)
 
     def _update_prometheus_jobs(self, _):
-        """Setup Prometheus scrape configuration for external targets.
-        """
+        """Setup Prometheus scrape configuration for external targets."""
         self.unit.status = ActiveStatus()
         if not self.unit.is_leader():
             return
@@ -55,17 +55,21 @@ class PrometheusScrapeTargetCharm(CharmBase):
     def _scrape_jobs(self):
         targets = self._targets()
 
-        jobs = [
-            {
-                "job_name": self._job_name(),
-                "metrics_path": self.model.config["metrics-path"],
-                "static_configs": [
-                    {
-                        "targets": targets,
-                    }
-                ]
-            }
-        ] if targets else []
+        jobs = (
+            [
+                {
+                    "job_name": self._job_name(),
+                    "metrics_path": self.model.config["metrics-path"],
+                    "static_configs": [
+                        {
+                            "targets": targets,
+                        }
+                    ],
+                }
+            ]
+            if targets
+            else []
+        )
 
         labels = self._labels()
         if jobs and labels:
@@ -96,7 +100,7 @@ class PrometheusScrapeTargetCharm(CharmBase):
         num_colons = address.count(":")
         if num_colons > 1:
             return ""
-        host, port = address.split(":") if num_colons else (address, DEFAULT_PORT)
+        host, port = address.split(":") if num_colons else (address, DEFAULT_METRICS_ENDPOINT_PORT)
 
         # validate port
         try:
@@ -104,7 +108,7 @@ class PrometheusScrapeTargetCharm(CharmBase):
         except ValueError:
             return ""
 
-        if port < 0 or port > 2**16-1:
+        if port < 0 or port > 2 ** 16 - 1:
             return ""
 
         # validate host
@@ -139,10 +143,7 @@ class PrometheusScrapeTargetCharm(CharmBase):
 
     def _job_name(self):
         return "juju_{}_{}_{}_{}".format(
-            self.model.name,
-            self.model.uuid[:7],
-            self.app.name,
-            self.model.config["job-name"]
+            self.model.name, self.model.uuid[:7], self.app.name, self.model.config["job-name"]
         )
 
 
