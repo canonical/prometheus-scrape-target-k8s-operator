@@ -30,7 +30,7 @@ class PrometheusScrapeTargetCharm(CharmBase):
 
         # handle changes in relation with Prometheus
         self.framework.observe(
-            self.on[self._prometheus_relation].relation_joined, self._update_prometheus_jobs
+            self.on[self._prometheus_relation].relation_created, self._update_prometheus_jobs
         )
         self.framework.observe(
             self.on[self._prometheus_relation].relation_changed, self._update_prometheus_jobs
@@ -41,21 +41,18 @@ class PrometheusScrapeTargetCharm(CharmBase):
 
     def _update_prometheus_jobs(self, _):
         """Setup Prometheus scrape configuration for external targets."""
-        self.unit.status = ActiveStatus()
-        if not self.unit.is_leader():
-            return
+        if self.unit.is_leader():
+            if jobs := self._scrape_jobs():
+                for relation in self.model.relations[self._prometheus_relation]:
+                    relation.data[self.app]["scrape_jobs"] = json.dumps(jobs)
 
-        jobs = self._scrape_jobs()
-        if not jobs:
-            return
-
-        for relation in self.model.relations[self._prometheus_relation]:
-            relation.data[self.app]["scrape_jobs"] = json.dumps(jobs)
+                self.unit.status = ActiveStatus()
 
     def _scrape_jobs(self):
         targets = self._targets()
+        labels = self._labels()
 
-        jobs = (
+        return (
             [
                 {
                     "job_name": self._job_name(),
@@ -63,6 +60,7 @@ class PrometheusScrapeTargetCharm(CharmBase):
                     "static_configs": [
                         {
                             "targets": targets,
+                            "labels": labels,
                         }
                     ],
                 }
@@ -71,27 +69,25 @@ class PrometheusScrapeTargetCharm(CharmBase):
             else []
         )
 
-        labels = self._labels()
-        if jobs and labels:
-            jobs[0]["static_configs"][0]["labels"] = labels
-
-        return jobs
-
     def _targets(self):
-        if not (targets := self.model.config.get("targets", "")):
+        if not (config_targets := self.model.config.get("targets", "")):
+            self.unit.status = BlockedStatus("No targets specified")
             return []
 
-        urls = targets.split(",")
         targets = []
         invalid_targets = []
-        for url in urls:
-            if not (valid_address := self._validated_address(url)):
-                invalid_targets.append(url)
-                continue
-            targets.append(valid_address)
+        for config_target in config_targets.split(","):
+            valid_address = self._validated_address(config_target)
+
+            if valid_address:
+                targets.append(valid_address)
+            else:
+                invalid_targets.append(valid_address)
 
         if invalid_targets:
+            logger.error("Invalid targets found: %s", invalid_targets)
             self.unit.status = BlockedStatus(f"Invalid targets : {invalid_targets}")
+            return []
 
         return targets
 
@@ -99,21 +95,30 @@ class PrometheusScrapeTargetCharm(CharmBase):
         # split host and port parts
         num_colons = address.count(":")
         if num_colons > 1:
+            logger.error("No ':' in target: %s", address)
             return ""
+
         host, port = address.split(":") if num_colons else (address, DEFAULT_METRICS_ENDPOINT_PORT)
 
         # validate port
         try:
             port = int(port)
         except ValueError:
+            logger.error("Invalid port for target: %s", port)
             return ""
 
         if port < 0 or port > 2 ** 16 - 1:
+            logger.error("Invalid port range for target: %s", port)
             return ""
 
         # validate host
-        match = re.search(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", host.strip())
+        match = re.search(
+            r"^(?:(?:(?:(?:[a-zA-Z0-9][-a-zA-Z0-9]*)?[a-zA-Z0-9])[.])*(?:[a-zA-Z][-a-zA-Z0-9]*[a-zA-Z0-9]|[a-zA-Z])[.]?)$",
+            host.strip(),
+        )
+
         if not match:
+            logger.error("Invalid hostname: %s", host.strip())
             return ""
         else:
             return f"{match.group(0)}:{port}"

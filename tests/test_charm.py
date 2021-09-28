@@ -3,13 +3,13 @@
 #
 # Learn more about testing at: https://juju.is/docs/sdk/testing
 
+import json
 import unittest
 
 from ops.model import ActiveStatus, BlockedStatus
 from ops.testing import Harness
 
 from charm import PrometheusScrapeTargetCharm
-
 
 class TestCharm(unittest.TestCase):
     def setUp(self):
@@ -32,6 +32,17 @@ class TestCharm(unittest.TestCase):
 
         self.assertEqual(self.harness.model.unit.status, BlockedStatus("No targets specified"))
 
+    def test_no_leader(self):
+        """Test no relation data changes if agent is not leader."""
+        self.harness.set_leader(False)
+
+        self.harness.update_config({"targets": "foo:1234,bar:5678"})
+
+        downstream_rel_id = self.harness.add_relation("metrics-endpoint", "prometheus-k8s")
+        relation_data = self.harness.get_relation_data(downstream_rel_id, self.harness.charm.app.name)
+
+        self.assertEqual({}, relation_data)
+
     def test_no_labels(self):
         """Test relation data for single targets without additional labels."""
         self.harness.set_leader(True)
@@ -39,23 +50,23 @@ class TestCharm(unittest.TestCase):
         self.harness.update_config({"targets": "foo:1234,bar:5678"})
 
         downstream_rel_id = self.harness.add_relation("metrics-endpoint", "prometheus-k8s")
+        relation_data = self.harness.get_relation_data(downstream_rel_id, self.harness.charm.app.name)
 
+        self.assertEqual(["scrape_jobs"], list(relation_data.keys()))
         self.assertEqual(
-            {
-                "scrape-jobs": [
-                    {
-                        "job_name": "external_jobs",
-                        "metrics_path": "/metrics",
-                        "static_configs": [
-                            {
-                                "targets": ["foo:1234", "bar:5678"],
-                                "labels": [],
-                            },
-                        ],
-                    }
-                ]
-            },
-            self.harness.get_relation_data(downstream_rel_id, self.harness.charm.app.name),
+            [
+                {
+                    "job_name": "juju_lma_e40bf1a_prometheus-scrape-target_external_jobs",
+                    "metrics_path": "/metrics",
+                    "static_configs": [
+                        {
+                            "targets": ["foo:1234", "bar:5678"],
+                            "labels": {},
+                        },
+                    ],
+                }
+            ],
+            json.loads(relation_data["scrape_jobs"]),
         )
 
         self.assertEqual(self.harness.model.unit.status, ActiveStatus())
@@ -73,23 +84,24 @@ class TestCharm(unittest.TestCase):
         )
 
         downstream_rel_id = self.harness.add_relation("metrics-endpoint", "prometheus-k8s")
+        relation_data = self.harness.get_relation_data(downstream_rel_id, self.harness.charm.app.name)
 
+        # Ensure we have no other key set, specifically we do not want any `scrape_metadata`
+        self.assertEqual(["scrape_jobs"], list(relation_data.keys()))
         self.assertEqual(
-            {
-                "scrape-jobs": [
-                    {
-                        "job_name": "external_jobs",
-                        "metrics_path": "/foometrics",
-                        "static_configs": [
-                            {
-                                "targets": ["foo:1234", "bar:5678"],
-                                "labels": {"lfoor": "lbar"},
-                            },
-                        ],
-                    }
-                ]
-            },
-            self.harness.get_relation_data(downstream_rel_id, self.harness.charm.app.name),
+            [
+                {
+                    "job_name": "juju_lma_e40bf1a_prometheus-scrape-target_external_jobs",
+                    "metrics_path": "/foometrics",
+                    "static_configs": [
+                        {
+                            "targets": ["foo:1234", "bar:5678"],
+                            "labels": {"lfoo": "lbar"},
+                        },
+                    ],
+                }
+            ],
+            json.loads(relation_data["scrape_jobs"]),
         )
 
         self.assertEqual(self.harness.model.unit.status, ActiveStatus())
