@@ -11,6 +11,7 @@ from ops.testing import Harness
 
 from charm import PrometheusScrapeTargetCharm
 
+
 class TestCharm(unittest.TestCase):
     def setUp(self):
         """Flake8 forces me to write meaningless docstrings."""
@@ -39,7 +40,9 @@ class TestCharm(unittest.TestCase):
         self.harness.update_config({"targets": "foo:1234,bar:5678"})
 
         downstream_rel_id = self.harness.add_relation("metrics-endpoint", "prometheus-k8s")
-        relation_data = self.harness.get_relation_data(downstream_rel_id, self.harness.charm.app.name)
+        relation_data = self.harness.get_relation_data(
+            downstream_rel_id, self.harness.charm.app.name
+        )
 
         self.assertEqual({}, relation_data)
 
@@ -50,7 +53,9 @@ class TestCharm(unittest.TestCase):
         self.harness.update_config({"targets": "foo:1234,bar:5678"})
 
         downstream_rel_id = self.harness.add_relation("metrics-endpoint", "prometheus-k8s")
-        relation_data = self.harness.get_relation_data(downstream_rel_id, self.harness.charm.app.name)
+        relation_data = self.harness.get_relation_data(
+            downstream_rel_id, self.harness.charm.app.name
+        )
 
         self.assertEqual(["scrape_jobs"], list(relation_data.keys()))
         self.assertEqual(
@@ -84,7 +89,9 @@ class TestCharm(unittest.TestCase):
         )
 
         downstream_rel_id = self.harness.add_relation("metrics-endpoint", "prometheus-k8s")
-        relation_data = self.harness.get_relation_data(downstream_rel_id, self.harness.charm.app.name)
+        relation_data = self.harness.get_relation_data(
+            downstream_rel_id, self.harness.charm.app.name
+        )
 
         # Ensure we have no other key set, specifically we do not want any `scrape_metadata`
         self.assertEqual(["scrape_jobs"], list(relation_data.keys()))
