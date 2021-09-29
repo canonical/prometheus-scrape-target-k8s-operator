@@ -20,6 +20,39 @@ logger = logging.getLogger(__name__)
 DEFAULT_METRICS_ENDPOINT_PORT = 80
 
 
+def _validated_address(address):
+    # split host and port parts
+    num_colons = address.count(":")
+    if num_colons > 1:
+        logger.error("No ':' in target: %s", address)
+        return ""
+
+    host, port = address.split(":") if num_colons else (address, DEFAULT_METRICS_ENDPOINT_PORT)
+
+    # validate port
+    try:
+        port = int(port)
+    except ValueError:
+        logger.error("Invalid port for target: %s", port)
+        return ""
+
+    if port < 0 or port > 2 ** 16 - 1:
+        logger.error("Invalid port range for target: %s", port)
+        return ""
+
+    # validate host
+    match = re.search(
+        r"^(?:(?:(?:(?:[a-zA-Z0-9][-a-zA-Z0-9]*)?[a-zA-Z0-9])[.])*(?:[a-zA-Z][-a-zA-Z0-9]*[a-zA-Z0-9]|[a-zA-Z])[.]?)$",
+        host.strip(),
+    )
+
+    if not match:
+        logger.error("Invalid hostname: %s", host.strip())
+        return ""
+    else:
+        return f"{match.group(0)}:{port}"
+
+
 class PrometheusScrapeTargetCharm(CharmBase):
     """Prometheus Scrape Target Charm."""
 
@@ -77,7 +110,7 @@ class PrometheusScrapeTargetCharm(CharmBase):
         targets = []
         invalid_targets = []
         for config_target in config_targets.split(","):
-            valid_address = self._validated_address(config_target)
+            valid_address = _validated_address(config_target)
 
             if valid_address:
                 targets.append(valid_address)
@@ -90,38 +123,6 @@ class PrometheusScrapeTargetCharm(CharmBase):
             return []
 
         return targets
-
-    def _validated_address(self, address):
-        # split host and port parts
-        num_colons = address.count(":")
-        if num_colons > 1:
-            logger.error("No ':' in target: %s", address)
-            return ""
-
-        host, port = address.split(":") if num_colons else (address, DEFAULT_METRICS_ENDPOINT_PORT)
-
-        # validate port
-        try:
-            port = int(port)
-        except ValueError:
-            logger.error("Invalid port for target: %s", port)
-            return ""
-
-        if port < 0 or port > 2 ** 16 - 1:
-            logger.error("Invalid port range for target: %s", port)
-            return ""
-
-        # validate host
-        match = re.search(
-            r"^(?:(?:(?:(?:[a-zA-Z0-9][-a-zA-Z0-9]*)?[a-zA-Z0-9])[.])*(?:[a-zA-Z][-a-zA-Z0-9]*[a-zA-Z0-9]|[a-zA-Z])[.]?)$",
-            host.strip(),
-        )
-
-        if not match:
-            logger.error("Invalid hostname: %s", host.strip())
-            return ""
-        else:
-            return f"{match.group(0)}:{port}"
 
     def _labels(self):
         if not (all_labels := self.model.config.get("labels", "")):
