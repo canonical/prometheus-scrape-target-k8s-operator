@@ -61,7 +61,7 @@ class TestCharm(unittest.TestCase):
         self.assertEqual(
             [
                 {
-                    "job_name": "juju_lma_e40bf1a_prometheus-scrape-target_external_jobs",
+                    "job_name": "juju_lma_e40bf1a_prometheus-scrape-target-k8s_external_jobs",
                     "metrics_path": "/metrics",
                     "static_configs": [
                         {
@@ -98,7 +98,7 @@ class TestCharm(unittest.TestCase):
         self.assertEqual(
             [
                 {
-                    "job_name": "juju_lma_e40bf1a_prometheus-scrape-target_external_jobs",
+                    "job_name": "juju_lma_e40bf1a_prometheus-scrape-target-k8s_external_jobs",
                     "metrics_path": "/foometrics",
                     "static_configs": [
                         {
