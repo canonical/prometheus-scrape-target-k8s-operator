@@ -96,13 +96,13 @@ class PrometheusScrapeTargetCharm(CharmBase):
         return []
 
     def _targets(self) -> list:
-        if not (config_targets := self.model.config.get("targets", "")):
+        if not (unvalidated_scrape_targets := self.model.config.get("targets", "")):
             self.unit.status = BlockedStatus("No targets specified")
             return []
 
         targets = []
         invalid_targets = []
-        for config_target in config_targets.split(","):
+        for config_target in unvalidated_scrape_targets.split(","):
             if valid_address := _validated_address(config_target):
                 targets.append(valid_address)
             else:
