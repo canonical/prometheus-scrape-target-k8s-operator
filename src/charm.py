@@ -8,7 +8,7 @@
 
 import json
 import logging
-import re
+from urllib.parse import urlparse
 
 from ops.charm import CharmBase
 from ops.main import main
@@ -20,37 +20,28 @@ logger = logging.getLogger(__name__)
 DEFAULT_METRICS_ENDPOINT_PORT = 80
 
 
-def _validated_address(address):
-    # split host and port parts
-    num_colons = address.count(":")
-    if num_colons > 1:
-        logger.error("No ':' in target: %s", address)
-        return ""
+def _validated_address(address: str) -> str:
+    """Validate address using urllib.parse.urlparse.
 
-    host, port = address.split(":") if num_colons else (address, DEFAULT_METRICS_ENDPOINT_PORT)
+    Args:
+        address: must include scheme.
+    """
+    parsed = urlparse(address)
+    if not all([parsed.scheme, parsed.netloc]):
+        logger.error("Invalid address: scheme or netloc missing: %s", address)
+        return ""
 
     # validate port
     try:
-        port = int(port)
+        if parsed.port is not None:
+            target = parsed.netloc
+        else:
+            target = f"{parsed.netloc}:{DEFAULT_METRICS_ENDPOINT_PORT}"
     except ValueError:
-        logger.error("Invalid port for target: %s", port)
+        logger.error("Invalid port for target: %s", parsed.netloc)
         return ""
 
-    if port < 0 or port > 2 ** 16 - 1:
-        logger.error("Invalid port range for target: %s", port)
-        return ""
-
-    # validate host
-    match = re.search(
-        r"^(?:(?:(?:(?:[a-zA-Z0-9][-a-zA-Z0-9]*)?[a-zA-Z0-9])[.])*(?:[a-zA-Z][-a-zA-Z0-9]*[a-zA-Z0-9]|[a-zA-Z])[.]?)$",
-        host.strip(),
-    )
-
-    if not match:
-        logger.error("Invalid hostname: %s", host.strip())
-        return ""
-    else:
-        return f"{match.group(0)}:{port}"
+    return target
 
 
 class PrometheusScrapeTargetCharm(CharmBase):
@@ -81,12 +72,10 @@ class PrometheusScrapeTargetCharm(CharmBase):
 
                 self.unit.status = ActiveStatus()
 
-    def _scrape_jobs(self):
-        targets = self._targets()
-        labels = self._labels()
-
-        return (
-            [
+    def _scrape_jobs(self) -> list:
+        if targets := self._targets():
+            labels = self._labels()
+            return [
                 {
                     "job_name": self._job_name(),
                     "metrics_path": self.model.config["metrics-path"],
@@ -98,11 +87,10 @@ class PrometheusScrapeTargetCharm(CharmBase):
                     ],
                 }
             ]
-            if targets
-            else []
-        )
 
-    def _targets(self):
+        return []
+
+    def _targets(self) -> list:
         if not (config_targets := self.model.config.get("targets", "")):
             self.unit.status = BlockedStatus("No targets specified")
             return []
@@ -110,12 +98,10 @@ class PrometheusScrapeTargetCharm(CharmBase):
         targets = []
         invalid_targets = []
         for config_target in config_targets.split(","):
-            valid_address = _validated_address(config_target)
-
-            if valid_address:
+            if valid_address := _validated_address(config_target):
                 targets.append(valid_address)
             else:
-                invalid_targets.append(valid_address)
+                invalid_targets.append(config_target)
 
         if invalid_targets:
             logger.error("Invalid targets found: %s", invalid_targets)
