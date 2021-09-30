@@ -17,4 +17,3 @@ options:
   metrics-path:
     description: Metrics path for external jobs.
     type: string
-    default: "/metrics"

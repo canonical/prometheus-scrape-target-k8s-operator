@@ -62,7 +62,6 @@ class TestCharm(unittest.TestCase):
             [
                 {
                     "job_name": "juju_lma_e40bf1a_prometheus-scrape-target-k8s_external_jobs",
-                    "metrics_path": "/metrics",
                     "static_configs": [
                         {
                             "targets": ["foo:1234", "bar:5678"],
@@ -113,7 +112,7 @@ class TestCharm(unittest.TestCase):
 
         self.assertEqual(self.harness.model.unit.status, ActiveStatus())
 
-    def test_scrape_job_has_default_port_if_not_specified(self):
+    def test_scrape_job_has_no_port_if_not_specified(self):
         """Test relation data for single targets without additional labels."""
         self.harness.set_leader(True)
 
@@ -129,10 +128,9 @@ class TestCharm(unittest.TestCase):
             [
                 {
                     "job_name": "juju_lma_e40bf1a_prometheus-scrape-target-k8s_external_jobs",
-                    "metrics_path": "/metrics",
                     "static_configs": [
                         {
-                            "targets": ["foo:80", "bar:80"],
+                            "targets": ["foo", "bar"],
                             # "labels": {},
                         },
                     ],

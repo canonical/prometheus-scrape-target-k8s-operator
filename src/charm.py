@@ -16,9 +16,6 @@ from ops.model import ActiveStatus, BlockedStatus
 
 logger = logging.getLogger(__name__)
 
-# default port for scrape targets
-DEFAULT_METRICS_ENDPOINT_PORT = 80
-
 
 def _validated_address(address: str) -> str:
     """Validate address using urllib.parse.urlparse.
@@ -38,10 +35,9 @@ def _validated_address(address: str) -> str:
 
     # validate port
     try:
-        if parsed.port is not None:
-            target = parsed.netloc
-        else:
-            target = f"{parsed.netloc}:{DEFAULT_METRICS_ENDPOINT_PORT}"
+        # the port property would raise an exception if the port is invalid
+        _ = parsed.port
+        target = parsed.netloc
     except ValueError:
         logger.error("Invalid port for target: %s", parsed.netloc)
         return ""
@@ -85,13 +81,17 @@ class PrometheusScrapeTargetCharm(CharmBase):
             if labels := self._labels():
                 static_config.update(labels=labels)
 
-            return [
-                {
-                    "job_name": self._job_name(),
-                    "metrics_path": self.model.config["metrics-path"],
-                    "static_configs": [static_config],
-                }
-            ]
+            job = {
+                "job_name": self._job_name(),
+                "static_configs": [static_config],
+            }
+
+            if metrics_path := self.model.config.get("metrics-path"):
+                # prometheus has a its own built-in default for metrics_path:
+                # [ metrics_path: <path> | default = /metrics ]
+                job.update(metrics_path=metrics_path)
+
+            return [job]
 
         return []
 
