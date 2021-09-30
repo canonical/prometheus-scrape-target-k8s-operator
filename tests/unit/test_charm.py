@@ -170,3 +170,17 @@ class TestCharm(unittest.TestCase):
 
         self.assertEqual([], list(relation_data.keys()))
         self.assertIsInstance(self.harness.model.unit.status, BlockedStatus)
+
+    def test_invalid_port(self):
+        """Test relation data for targets with invalid address."""
+        self.harness.set_leader(True)
+
+        self.harness.update_config({"targets": "foo:123456789,bar:5678"})
+
+        downstream_rel_id = self.harness.add_relation("metrics-endpoint", "prometheus-k8s")
+        relation_data = self.harness.get_relation_data(
+            downstream_rel_id, self.harness.charm.app.name
+        )
+
+        self.assertIsInstance(self.harness.model.unit.status, BlockedStatus)
+        self.assertEqual({}, dict(relation_data))
