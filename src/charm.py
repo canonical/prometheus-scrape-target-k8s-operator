@@ -24,10 +24,15 @@ def _validated_address(address: str) -> str:
     """Validate address using urllib.parse.urlparse.
 
     Args:
-        address: must include scheme.
+        address: must not include scheme.
     """
+    # Add '//' prefix per RFC 1808, if not already there
+    # This is needed by urlparse, https://docs.python.org/3/library/urllib.parse.html
+    if not address.startswith("//"):
+        address = "//" + address
+
     parsed = urlparse(address)
-    if not all([parsed.scheme, parsed.netloc]):
+    if not parsed.netloc or any([parsed.scheme, parsed.path, parsed.params, parsed.query]):
         logger.error("Invalid address: scheme or netloc missing: %s", address)
         return ""
 
