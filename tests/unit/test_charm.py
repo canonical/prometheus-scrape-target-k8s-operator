@@ -20,7 +20,7 @@ class TestCharm(unittest.TestCase):
         self.addCleanup(self.harness.cleanup)
         self.harness.begin()
 
-    def test_no_data(self):
+    def test_charm_blocks_if_no_targets_specified(self):
         """Test charm is blocked when no configs are provided."""
         self.harness.set_leader(True)
 
@@ -33,7 +33,7 @@ class TestCharm(unittest.TestCase):
 
         self.assertEqual(self.harness.model.unit.status, BlockedStatus("No targets specified"))
 
-    def test_no_leader(self):
+    def test_non_leader_doesn_not_modify_realtion_data(self):
         """Test no relation data changes if agent is not leader."""
         self.harness.set_leader(False)
 
@@ -46,7 +46,7 @@ class TestCharm(unittest.TestCase):
 
         self.assertEqual({}, relation_data)
 
-    def test_no_labels(self):
+    def test_scrape_job_has_no_labels_if_not_specified(self):
         """Test relation data for single targets without additional labels."""
         self.harness.set_leader(True)
 
@@ -76,7 +76,7 @@ class TestCharm(unittest.TestCase):
 
         self.assertEqual(self.harness.model.unit.status, ActiveStatus())
 
-    def test_with_labels(self):
+    def test_scrape_job_has_specified_labels(self):
         """Test relation data for single targets with additional labels."""
         self.harness.set_leader(True)
 
@@ -113,7 +113,7 @@ class TestCharm(unittest.TestCase):
 
         self.assertEqual(self.harness.model.unit.status, ActiveStatus())
 
-    def test_valid_target_without_port(self):
+    def test_scrape_job_has_default_port_if_not_specified(self):
         """Test relation data for single targets without additional labels."""
         self.harness.set_leader(True)
 
@@ -143,8 +143,8 @@ class TestCharm(unittest.TestCase):
 
         self.assertEqual(self.harness.model.unit.status, ActiveStatus())
 
-    def test_invalid_host_with_scheme(self):
-        """Test relation data for single targets without additional labels."""
+    def test_charm_blocks_if_target_includes_scheme(self):
+        """Test the charm goes into blocked state if provided target address includes a scheme."""
         self.harness.set_leader(True)
 
         self.harness.update_config({"targets": "https://foo:1234"})
@@ -157,8 +157,8 @@ class TestCharm(unittest.TestCase):
         self.assertEqual([], list(relation_data.keys()))
         self.assertIsInstance(self.harness.model.unit.status, BlockedStatus)
 
-    def test_invalid_host_with_path(self):
-        """Test relation data for single targets without additional labels."""
+    def test_charm_blocks_if_target_includes_path(self):
+        """Test the charm goes into blocked state if provided target address includes a path."""
         self.harness.set_leader(True)
 
         self.harness.update_config({"targets": "foo:1234/ahah"})
@@ -171,8 +171,8 @@ class TestCharm(unittest.TestCase):
         self.assertEqual([], list(relation_data.keys()))
         self.assertIsInstance(self.harness.model.unit.status, BlockedStatus)
 
-    def test_invalid_port(self):
-        """Test relation data for targets with invalid address."""
+    def test_charm_blocks_if_specified_port_invalid(self):
+        """Test the charm goes into blocked state if provided port number is invalid."""
         self.harness.set_leader(True)
 
         self.harness.update_config({"targets": "foo:123456789,bar:5678"})
