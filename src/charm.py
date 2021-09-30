@@ -70,26 +70,26 @@ class PrometheusScrapeTargetCharm(CharmBase):
 
     def _update_prometheus_jobs(self, _):
         """Setup Prometheus scrape configuration for external targets."""
-        if self.unit.is_leader():
-            if jobs := self._scrape_jobs():
-                for relation in self.model.relations[self._prometheus_relation]:
-                    relation.data[self.app]["scrape_jobs"] = json.dumps(jobs)
+        if not self.unit.is_leader():
+            return
 
-                self.unit.status = ActiveStatus()
+        if jobs := self._scrape_jobs():
+            for relation in self.model.relations[self._prometheus_relation]:
+                relation.data[self.app]["scrape_jobs"] = json.dumps(jobs)
+
+            self.unit.status = ActiveStatus()
 
     def _scrape_jobs(self) -> list:
         if targets := self._targets():
-            labels = self._labels()
+            static_config = {"targets": targets}
+            if labels := self._labels():
+                static_config.update(labels=labels)
+
             return [
                 {
                     "job_name": self._job_name(),
                     "metrics_path": self.model.config["metrics-path"],
-                    "static_configs": [
-                        {
-                            "targets": targets,
-                            "labels": labels,
-                        }
-                    ],
+                    "static_configs": [static_config],
                 }
             ]
 

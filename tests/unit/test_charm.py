@@ -66,7 +66,7 @@ class TestCharm(unittest.TestCase):
                     "static_configs": [
                         {
                             "targets": ["foo:1234", "bar:5678"],
-                            "labels": {},
+                            # "labels": {},
                         },
                     ],
                 }
@@ -133,7 +133,7 @@ class TestCharm(unittest.TestCase):
                     "static_configs": [
                         {
                             "targets": ["foo:80", "bar:80"],
-                            "labels": {},
+                            # "labels": {},
                         },
                     ],
                 }
