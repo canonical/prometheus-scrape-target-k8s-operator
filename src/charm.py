@@ -33,7 +33,7 @@ def _validated_address(address: str) -> str:
 
     parsed = urlparse(address)
     if not parsed.netloc or any([parsed.scheme, parsed.path, parsed.params, parsed.query]):
-        logger.error("Invalid address: scheme or netloc missing: %s", address)
+        logger.error("Invalid address (should only include netloc): %s", address)
         return ""
 
     # validate port
