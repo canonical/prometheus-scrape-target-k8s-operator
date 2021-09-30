@@ -61,7 +61,7 @@ class TestCharm(unittest.TestCase):
         self.assertEqual(
             [
                 {
-                    "job_name": "juju_lma_e40bf1a_prometheus-scrape-target_external_jobs",
+                    "job_name": "juju_lma_e40bf1a_prometheus-scrape-target-k8s_external_jobs",
                     "metrics_path": "/metrics",
                     "static_configs": [
                         {
@@ -98,7 +98,7 @@ class TestCharm(unittest.TestCase):
         self.assertEqual(
             [
                 {
-                    "job_name": "juju_lma_e40bf1a_prometheus-scrape-target_external_jobs",
+                    "job_name": "juju_lma_e40bf1a_prometheus-scrape-target-k8s_external_jobs",
                     "metrics_path": "/foometrics",
                     "static_configs": [
                         {
@@ -128,11 +128,11 @@ class TestCharm(unittest.TestCase):
         self.assertEqual(
             [
                 {
-                    "job_name": "juju_lma_e40bf1a_prometheus-scrape-target_external_jobs",
+                    "job_name": "juju_lma_e40bf1a_prometheus-scrape-target-k8s_external_jobs",
                     "metrics_path": "/metrics",
                     "static_configs": [
                         {
-                            "targets": ["foo", "bar"],
+                            "targets": ["foo:80", "bar:80"],
                             "labels": {},
                         },
                     ],
@@ -155,10 +155,7 @@ class TestCharm(unittest.TestCase):
         )
 
         self.assertEqual([], list(relation_data.keys()))
-
-        self.assertEqual(
-            self.harness.model.unit.status, BlockedStatus("Invalid target: 'https://foo:1234'")
-        )
+        self.assertIsInstance(self.harness.model.unit.status, BlockedStatus)
 
     def test_invalid_host_with_path(self):
         """Test relation data for single targets without additional labels."""
@@ -172,7 +169,4 @@ class TestCharm(unittest.TestCase):
         )
 
         self.assertEqual([], list(relation_data.keys()))
-
-        self.assertEqual(
-            self.harness.model.unit.status, BlockedStatus("Invalid target: 'foo:1234/ahah'")
-        )
+        self.assertIsInstance(self.harness.model.unit.status, BlockedStatus)
