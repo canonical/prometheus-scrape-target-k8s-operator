@@ -37,7 +37,7 @@ class TestCharm(unittest.TestCase):
         """Test no relation data changes if agent is not leader."""
         self.harness.set_leader(False)
 
-        self.harness.update_config({"targets": "http://foo:1234,http://bar:5678"})
+        self.harness.update_config({"targets": "foo:1234,bar:5678"})
 
         downstream_rel_id = self.harness.add_relation("metrics-endpoint", "prometheus-k8s")
         relation_data = self.harness.get_relation_data(
@@ -50,7 +50,7 @@ class TestCharm(unittest.TestCase):
         """Test relation data for single targets without additional labels."""
         self.harness.set_leader(True)
 
-        self.harness.update_config({"targets": "http://foo:1234,http://bar:5678"})
+        self.harness.update_config({"targets": "foo:1234,bar:5678"})
 
         downstream_rel_id = self.harness.add_relation("metrics-endpoint", "prometheus-k8s")
         relation_data = self.harness.get_relation_data(
@@ -61,7 +61,7 @@ class TestCharm(unittest.TestCase):
         self.assertEqual(
             [
                 {
-                    "job_name": "juju_lma_e40bf1a_prometheus-scrape-target-k8s_external_jobs",
+                    "job_name": "juju_lma_e40bf1a_prometheus-scrape-target_external_jobs",
                     "metrics_path": "/metrics",
                     "static_configs": [
                         {
@@ -82,7 +82,7 @@ class TestCharm(unittest.TestCase):
 
         self.harness.update_config(
             {
-                "targets": "http://foo:1234,http://bar:5678",
+                "targets": "foo:1234,bar:5678",
                 "labels": "lfoo:lbar",
                 "metrics-path": "/foometrics",
             }
@@ -98,7 +98,7 @@ class TestCharm(unittest.TestCase):
         self.assertEqual(
             [
                 {
-                    "job_name": "juju_lma_e40bf1a_prometheus-scrape-target-k8s_external_jobs",
+                    "job_name": "juju_lma_e40bf1a_prometheus-scrape-target_external_jobs",
                     "metrics_path": "/foometrics",
                     "static_configs": [
                         {
@@ -113,52 +113,66 @@ class TestCharm(unittest.TestCase):
 
         self.assertEqual(self.harness.model.unit.status, ActiveStatus())
 
-    def test_invalid_address_no_scheme(self):
-        """Test relation data for targets with invalid address."""
+    def test_valid_target_without_port(self):
+        """Test relation data for single targets without additional labels."""
         self.harness.set_leader(True)
 
-        self.harness.update_config({"targets": "foo:1234,http://bar:5678"})
+        self.harness.update_config({"targets": "foo,bar"})
 
         downstream_rel_id = self.harness.add_relation("metrics-endpoint", "prometheus-k8s")
         relation_data = self.harness.get_relation_data(
             downstream_rel_id, self.harness.charm.app.name
         )
 
-        self.assertIsInstance(self.harness.model.unit.status, BlockedStatus)
-        self.assertEqual({}, dict(relation_data))
-
-    def test_invalid_address_invalid_port(self):
-        """Test relation data for targets with invalid address."""
-        self.harness.set_leader(True)
-
-        self.harness.update_config({"targets": "http://foo:123456789,http://bar:5678"})
-
-        downstream_rel_id = self.harness.add_relation("metrics-endpoint", "prometheus-k8s")
-        relation_data = self.harness.get_relation_data(
-            downstream_rel_id, self.harness.charm.app.name
-        )
-
-        self.assertIsInstance(self.harness.model.unit.status, BlockedStatus)
-        self.assertEqual({}, dict(relation_data))
-
-    def test_targets_without_port_assigned_default_port(self):
-        """Test relation data for targets with invalid address."""
-        self.harness.set_leader(True)
-
-        self.harness.update_config({"targets": "http://foo,http://bar"})
-
-        downstream_rel_id = self.harness.add_relation("metrics-endpoint", "prometheus-k8s")
-        relation_data = self.harness.get_relation_data(
-            downstream_rel_id, self.harness.charm.app.name
+        self.assertEqual(["scrape_jobs"], list(relation_data.keys()))
+        self.assertEqual(
+            [
+                {
+                    "job_name": "juju_lma_e40bf1a_prometheus-scrape-target_external_jobs",
+                    "metrics_path": "/metrics",
+                    "static_configs": [
+                        {
+                            "targets": ["foo", "bar"],
+                            "labels": {},
+                        },
+                    ],
+                }
+            ],
+            json.loads(relation_data["scrape_jobs"]),
         )
 
         self.assertEqual(self.harness.model.unit.status, ActiveStatus())
+
+    def test_invalid_host_with_scheme(self):
+        """Test relation data for single targets without additional labels."""
+        self.harness.set_leader(True)
+
+        self.harness.update_config({"targets": "https://foo:1234"})
+
+        downstream_rel_id = self.harness.add_relation("metrics-endpoint", "prometheus-k8s")
+        relation_data = self.harness.get_relation_data(
+            downstream_rel_id, self.harness.charm.app.name
+        )
+
+        self.assertEqual([], list(relation_data.keys()))
+
         self.assertEqual(
-            dict(relation_data),
-            {
-                "scrape_jobs": '[{"job_name": '
-                '"juju_lma_e40bf1a_prometheus-scrape-target-k8s_external_jobs", '
-                '"metrics_path": "/metrics", "static_configs": [{"targets": '
-                '["foo:80", "bar:80"], "labels": {}}]}]'
-            },
+            self.harness.model.unit.status, BlockedStatus("Invalid target: 'https://foo:1234'")
+        )
+
+    def test_invalid_host_with_path(self):
+        """Test relation data for single targets without additional labels."""
+        self.harness.set_leader(True)
+
+        self.harness.update_config({"targets": "foo:1234/ahah"})
+
+        downstream_rel_id = self.harness.add_relation("metrics-endpoint", "prometheus-k8s")
+        relation_data = self.harness.get_relation_data(
+            downstream_rel_id, self.harness.charm.app.name
+        )
+
+        self.assertEqual([], list(relation_data.keys()))
+
+        self.assertEqual(
+            self.harness.model.unit.status, BlockedStatus("Invalid target: 'foo:1234/ahah'")
         )
