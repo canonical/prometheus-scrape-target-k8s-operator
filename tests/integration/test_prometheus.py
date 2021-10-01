@@ -58,7 +58,7 @@ async def test_scrape_config_is_ingested_by_prometheus(ops_test):
     await ops_test.model.wait_for_idle(apps=["prom", "st"], status="active")
 
     def get_prom_config(url: str) -> dict:
-        response = urllib.request.urlopen(f"{url}/api/v1/status/config", data=None, timeout=2.0)
+        response = urllib.request.urlopen(f"{url}/api/v1/status/config", data=None, timeout=10.0)
         assert response.code == 200
         data = json.loads(response.read())
         config = yaml.safe_load(data["data"]["yaml"])
