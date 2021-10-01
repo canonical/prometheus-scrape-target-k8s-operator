@@ -8,6 +8,11 @@ Create and activate a virtualenv with the development requirements:
     source venv/bin/activate
     pip install -r requirements-dev.txt
 
+### Deploy local charm
+```shell
+juju deploy ./prometheus-scrape-target_ubuntu-20.04-amd64.charm --resource unused-image=busybox
+```
+
 ## Code overview
 
 TODO:

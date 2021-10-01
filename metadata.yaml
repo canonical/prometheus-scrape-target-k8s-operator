@@ -1,11 +1,8 @@
 # Copyright 2021 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-# For a complete list of supported options, see:
-# https://discourse.charmhub.io/t/charm-metadata-v2/3674/15
-name: prometheus-scrape-target
-display-name: |
-  Prometheus Scrape Target
+name: prometheus-scrape-target-k8s
+
 summary: |
   An integrator charm for external metrics endpoints.
 description: |
@@ -21,3 +18,4 @@ resources:
   unused-image:
     type: oci-image
     description: Unused OCI image for scrape target charm
+    upstream-source: busybox

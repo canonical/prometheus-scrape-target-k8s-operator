@@ -8,7 +8,7 @@
 
 import json
 import logging
-import re
+from urllib.parse import urlparse
 
 from ops.charm import CharmBase
 from ops.main import main
@@ -16,8 +16,33 @@ from ops.model import ActiveStatus, BlockedStatus
 
 logger = logging.getLogger(__name__)
 
-# default port for scrape targets
-DEFAULT_METRICS_ENDPOINT_PORT = 80
+
+def _validated_address(address: str) -> str:
+    """Validate address using urllib.parse.urlparse.
+
+    Args:
+        address: must not include scheme.
+    """
+    # Add '//' prefix per RFC 1808, if not already there
+    # This is needed by urlparse, https://docs.python.org/3/library/urllib.parse.html
+    if not address.startswith("//"):
+        address = "//" + address
+
+    parsed = urlparse(address)
+    if not parsed.netloc or any([parsed.scheme, parsed.path, parsed.params, parsed.query]):
+        logger.error("Invalid address (should only include netloc): %s", address)
+        return ""
+
+    # validate port
+    try:
+        # the port property would raise an exception if the port is invalid
+        _ = parsed.port
+        target = parsed.netloc
+    except ValueError:
+        logger.error("Invalid port for target: %s", parsed.netloc)
+        return ""
+
+    return target
 
 
 class PrometheusScrapeTargetCharm(CharmBase):
@@ -30,7 +55,7 @@ class PrometheusScrapeTargetCharm(CharmBase):
 
         # handle changes in relation with Prometheus
         self.framework.observe(
-            self.on[self._prometheus_relation].relation_joined, self._update_prometheus_jobs
+            self.on[self._prometheus_relation].relation_created, self._update_prometheus_jobs
         )
         self.framework.observe(
             self.on[self._prometheus_relation].relation_changed, self._update_prometheus_jobs
@@ -41,82 +66,54 @@ class PrometheusScrapeTargetCharm(CharmBase):
 
     def _update_prometheus_jobs(self, _):
         """Setup Prometheus scrape configuration for external targets."""
-        self.unit.status = ActiveStatus()
         if not self.unit.is_leader():
             return
 
-        jobs = self._scrape_jobs()
-        if not jobs:
-            return
+        if jobs := self._scrape_jobs():
+            for relation in self.model.relations[self._prometheus_relation]:
+                relation.data[self.app]["scrape_jobs"] = json.dumps(jobs)
 
-        for relation in self.model.relations[self._prometheus_relation]:
-            relation.data[self.app]["scrape_jobs"] = json.dumps(jobs)
+            self.unit.status = ActiveStatus()
 
-    def _scrape_jobs(self):
-        targets = self._targets()
+    def _scrape_jobs(self) -> list:
+        if targets := self._targets():
+            static_config = {"targets": targets}
+            if labels := self._labels():
+                static_config.update(labels=labels)
 
-        jobs = (
-            [
-                {
-                    "job_name": self._job_name(),
-                    "metrics_path": self.model.config["metrics-path"],
-                    "static_configs": [
-                        {
-                            "targets": targets,
-                        }
-                    ],
-                }
-            ]
-            if targets
-            else []
-        )
+            job = {
+                "job_name": self._job_name(),
+                "static_configs": [static_config],
+            }
 
-        labels = self._labels()
-        if jobs and labels:
-            jobs[0]["static_configs"][0]["labels"] = labels
+            if metrics_path := self.model.config.get("metrics-path"):
+                # prometheus has a its own built-in default for metrics_path:
+                # [ metrics_path: <path> | default = /metrics ]
+                job.update(metrics_path=metrics_path)
 
-        return jobs
+            return [job]
 
-    def _targets(self):
-        if not (targets := self.model.config.get("targets", "")):
+        return []
+
+    def _targets(self) -> list:
+        if not (unvalidated_scrape_targets := self.model.config.get("targets", "")):
+            self.unit.status = BlockedStatus("No targets specified")
             return []
 
-        urls = targets.split(",")
         targets = []
         invalid_targets = []
-        for url in urls:
-            if not (valid_address := self._validated_address(url)):
-                invalid_targets.append(url)
-                continue
-            targets.append(valid_address)
+        for config_target in unvalidated_scrape_targets.split(","):
+            if valid_address := _validated_address(config_target):
+                targets.append(valid_address)
+            else:
+                invalid_targets.append(config_target)
 
         if invalid_targets:
+            logger.error("Invalid targets found: %s", invalid_targets)
             self.unit.status = BlockedStatus(f"Invalid targets : {invalid_targets}")
+            return []
 
         return targets
-
-    def _validated_address(self, address):
-        # split host and port parts
-        num_colons = address.count(":")
-        if num_colons > 1:
-            return ""
-        host, port = address.split(":") if num_colons else (address, DEFAULT_METRICS_ENDPOINT_PORT)
-
-        # validate port
-        try:
-            port = int(port)
-        except ValueError:
-            return ""
-
-        if port < 0 or port > 2 ** 16 - 1:
-            return ""
-
-        # validate host
-        match = re.search(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", host.strip())
-        if not match:
-            return ""
-        else:
-            return f"{match.group(0)}:{port}"
 
     def _labels(self):
         if not (all_labels := self.model.config.get("labels", "")):
