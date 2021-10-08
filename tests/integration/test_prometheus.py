@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 import yaml
-from helpers import get_unit_address  # type: ignore[attr-defined]
+from helpers import get_unit_address
 
 log = logging.getLogger(__name__)
 
