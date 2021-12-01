@@ -86,7 +86,7 @@ class PrometheusScrapeTargetCharm(CharmBase):
                 "static_configs": [static_config],
             }
 
-            if metrics_path := self.model.config.get("metrics-path"):
+            if metrics_path := self.model.config.get("metrics_path"):
                 # prometheus has a its own built-in default for metrics_path:
                 # [ metrics_path: <path> | default = /metrics ]
                 job.update(metrics_path=metrics_path)
@@ -140,7 +140,7 @@ class PrometheusScrapeTargetCharm(CharmBase):
 
     def _job_name(self):
         return "juju_{}_{}_{}_{}".format(
-            self.model.name, self.model.uuid[:7], self.app.name, self.model.config["job-name"]
+            self.model.name, self.model.uuid[:7], self.app.name, self.model.config["job_name"]
         )
 
 

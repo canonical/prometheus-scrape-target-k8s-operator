@@ -106,7 +106,7 @@ async def test_scrape_config_is_ingested_by_prometheus(ops_test):
 
     # update config and retest
     await ops_test.model.applications["st"].set_config(
-        {"targets": "1.2.3.4:5678", "metrics-path": "/foometrics"}
+        {"targets": "1.2.3.4:5678", "metrics_path": "/foometrics"}
     )
     await ops_test.model.wait_for_idle(apps=["prom", "st"], status="active")
 
