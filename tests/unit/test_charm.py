@@ -83,7 +83,7 @@ class TestCharm(unittest.TestCase):
             {
                 "targets": "foo:1234,bar:5678",
                 "labels": "lfoo:lbar",
-                "metrics-path": "/foometrics",
+                "metrics_path": "/foometrics",
             }
         )
 
