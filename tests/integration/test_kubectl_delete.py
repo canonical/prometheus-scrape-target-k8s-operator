@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 import yaml
+from helpers import get_config_values
 
 logger = logging.getLogger(__name__)
 
@@ -49,4 +50,4 @@ async def test_kubectl_delete_pod(ops_test):
     await ops_test.model.block_until(lambda: len(ops_test.model.applications[app_name].units) > 0)
     await ops_test.model.wait_for_idle(apps=[app_name], status="active", timeout=1000)
 
-    assert await ops_test.model.applications[app_name].get_config() == config
+    assert await get_config_values(ops_test, app_name) == config
