@@ -24,16 +24,10 @@ async def test_deploy_from_edge_and_upgrade_from_local_path(ops_test, charm_unde
 
     config = {"targets": "1.2.3.4:5678", "metrics_path": "/foometrics"}
     await ops_test.model.applications[app_name].set_config(config)
-    await ops_test.model.wait_for_idle(apps=[app_name], timeout=1000)
-
-    # without any relations, the charm should be blocked
-    assert ops_test.model.applications[app_name].units[0].workload_status == "blocked"
+    await ops_test.model.wait_for_idle(apps=[app_name], status="active", timeout=1000)
 
     logger.info("upgrade deployed charm with local charm %s", charm_under_test)
     await ops_test.model.applications[app_name].refresh(path=charm_under_test, resources=resources)
-    await ops_test.model.wait_for_idle(apps=[app_name], timeout=1000)
-
-    # without any relations, the charm should be blocked
-    assert ops_test.model.applications[app_name].units[0].workload_status == "blocked"
+    await ops_test.model.wait_for_idle(apps=[app_name], status="active", timeout=1000)
 
     assert await ops_test.model.applications[app_name].get_config() == config
