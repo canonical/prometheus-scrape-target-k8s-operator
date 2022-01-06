@@ -50,4 +50,4 @@ async def test_kubectl_delete_pod(ops_test):
     await ops_test.model.block_until(lambda: len(ops_test.model.applications[app_name].units) > 0)
     await ops_test.model.wait_for_idle(apps=[app_name], status="active", timeout=1000)
 
-    assert await get_config_values(ops_test, app_name) == config
+    assert (await get_config_values(ops_test, app_name)).items() >= config.items()
