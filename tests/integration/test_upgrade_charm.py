@@ -17,7 +17,7 @@ app_name = METADATA["name"]
 
 
 @pytest.mark.abort_on_fail
-async def test_deploy_from_edge_and_upgrade_from_local_path(ops_test, charm_under_test):
+async def test_config_values_are_retained_after_pod_upgraded(ops_test, charm_under_test):
     """Deploy from charmhub and then upgrade with the charm-under-test."""
     logger.info("deploy charm from charmhub")
     resources = {"unused-image": METADATA["resources"]["unused-image"]["upstream-source"]}

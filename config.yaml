@@ -8,7 +8,7 @@ options:
     description: Comma separated list of external scrape targets.
     type: string
   labels:
-    description: Comma separted list of label:value pairs.
+    description: Comma separated list of label:value pairs.
     type: string
   job_name:
     description: Name of external scrape configuration jobs.
