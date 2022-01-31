@@ -1,39 +1,78 @@
-# prometheus-scrape-target
+# Contributing
+
+## Overview
+
+This documents explains the processes and practices recommended for
+contributing enhancements to the Prometheus Scrape Target charm.
+
+- Generally, before developing enhancements to this charm, you should consider
+  [opening an issue ](https://github.com/canonical/prometheus-scrape-target-k8s-operator)
+  explaining your use case.
+- If you would like to chat with us about your use-cases or proposed
+  implementation, you can reach us at
+  [Canonical Mattermost public channel](https://chat.charmhub.io/charmhub/channels/charm-dev)
+  or [Discourse](https://discourse.charmhub.io/).
+  The primary author of this charm is available on the Mattermost channel as
+  `@balbir-thomas`.
+- Familiarising yourself with the
+  [Charmed Operator Framework](https://juju.is/docs/sdk)
+  library will help you a lot when working on new features or bug fixes.
+- All enhancements require review before being merged. Code review
+  typically examines
+  + code quality
+  + test coverage
+  + user experience for Juju administrators
+- Please help us out in ensuring easy to review branches by rebasing
+  your pull request branch onto the `main` branch. This also avoids
+  merge commits and creates a linear Git commit history.
 
 ## Developing
 
 Create and activate a virtualenv with the development requirements:
 
-    virtualenv -p python3 venv
-    source venv/bin/activate
-    pip install -r requirements-dev.txt
-
-### Deploy local charm
-```shell
-juju deploy ./prometheus-scrape-target_ubuntu-20.04-amd64.charm --resource unused-image=busybox
+```bash
+$ virtualenv -p python3 venv
+$ source venv/bin/activate
 ```
 
-## Code overview
+### Charm Specific Setup
 
-TODO:
-One of the most important things a consumer of your charm (or library)
-needs to know is what set of functionality it provides. Which categories
-does it fit into? Which events do you listen to? Which libraries do you
-consume? Which ones do you export and how are they used?
+A typical setup using [Snap](https://snapcraft.io/), for deployments
+to a [microk8s](https://microk8s.io/) cluster can be achieved by
+following instructions in the Juju SDK
+[development setup](https://juju.is/docs/sdk/dev-setup).
 
-## Intended use case
 
-TODO:
-Why were these decisions made? What's the scope of your charm?
+### Build
 
-## Roadmap
+Build the charm in this git repository
 
-If this Charm doesn't fulfill all of the initial functionality you were
-hoping for or planning on, please add a Roadmap or TODO here
+```bash
+$ charmcraft pack
+```
+
+### Deploy
+
+```bash
+$ juju deploy ./prometheus-scrape-target-k8s_ubuntu-20.04-amd64.charm --resource unused-image=busybox:latest
+```
+
+## Linting
+Flake8 and black linters may be run to check charm and test source code using the
+command
+
+```bash
+tox -e lint
+```
 
 ## Testing
 
-The Python operator framework includes a very nice harness for testing
-operator behaviour without full deployment. Just `run_tests`:
+Unit tests are implemented using the Operator Framework test
+[harness](https://ops.readthedocs.io/en/latest/#module-ops.testing). These
+tests may executed by doing
 
-    ./run_tests
+```bash
+$ tox -e unit
+```
+
+It is expected that unit tests should provide at least 80% code coverage.
