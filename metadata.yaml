@@ -11,11 +11,3 @@ description: |
 provides:
   metrics-endpoint:
     interface: prometheus_scrape
-containers:
-  unused:
-    resource: unused-image
-resources:
-  unused-image:
-    type: oci-image
-    description: Unused OCI image for scrape target charm
-    upstream-source: busybox

@@ -25,8 +25,7 @@ async def test_build_and_deploy(ops_test):
     """
     # build and deploy charm from local source folder
     charm_under_test = await ops_test.build_charm(".")
-    resources = {"unused-image": METADATA["resources"]["unused-image"]["upstream-source"]}
-    await ops_test.model.deploy(charm_under_test, resources=resources, application_name="st")
+    await ops_test.model.deploy(charm_under_test, application_name="st")
 
     # deploy prometheus from edge
     await ops_test.model.deploy("prometheus-k8s", application_name="prom", channel="edge")

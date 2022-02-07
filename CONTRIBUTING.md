@@ -54,7 +54,7 @@ $ charmcraft pack
 ### Deploy
 
 ```bash
-$ juju deploy ./prometheus-scrape-target-k8s_ubuntu-20.04-amd64.charm --resource unused-image=busybox:latest
+$ juju deploy ./prometheus-scrape-target-k8s_ubuntu-20.04-amd64.charm
 ```
 
 ## Linting
