@@ -70,11 +70,14 @@ class PrometheusScrapeTargetCharm(CharmBase):
             self.unit.status = WaitingStatus("inactive unit")
             return
 
-        if jobs := self._scrape_jobs():
-            for relation in self.model.relations[self._prometheus_relation]:
-                relation.data[self.app]["scrape_jobs"] = json.dumps(jobs)
+        jobs = self._scrape_jobs()
+        for relation in self.model.relations[self._prometheus_relation]:
+            relation.data[self.app]["scrape_jobs"] = json.dumps(jobs)
 
+        if jobs:
             self.unit.status = ActiveStatus()
+        else:
+            self.unit.status = BlockedStatus("No targets specified")
 
     def _scrape_jobs(self) -> list:
         if targets := self._targets():
