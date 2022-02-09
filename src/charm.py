@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 
 from ops.charm import CharmBase
 from ops.main import main
-from ops.model import ActiveStatus, BlockedStatus
+from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +67,7 @@ class PrometheusScrapeTargetCharm(CharmBase):
     def _update_prometheus_jobs(self, _):
         """Setup Prometheus scrape configuration for external targets."""
         if not self.unit.is_leader():
+            self.unit.status = WaitingStatus("inactive unit")
             return
 
         if jobs := self._scrape_jobs():
