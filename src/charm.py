@@ -69,10 +69,11 @@ class PrometheusScrapeTargetCharm(CharmBase):
         if not self.unit.is_leader():
             return
 
-        if jobs := self._scrape_jobs():
-            for relation in self.model.relations[self._prometheus_relation]:
-                relation.data[self.app]["scrape_jobs"] = json.dumps(jobs)
+        jobs = self._scrape_jobs()
+        for relation in self.model.relations[self._prometheus_relation]:
+            relation.data[self.app]["scrape_jobs"] = json.dumps(jobs)
 
+        if jobs:
             self.unit.status = ActiveStatus()
 
     def _scrape_jobs(self) -> list:

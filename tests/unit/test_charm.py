@@ -27,7 +27,7 @@ class TestCharm(unittest.TestCase):
         downstream_rel_id = self.harness.add_relation("metrics-endpoint", "prometheus-k8s")
 
         self.assertEqual(
-            {},
+            {'scrape_jobs': '[]'},
             self.harness.get_relation_data(downstream_rel_id, self.harness.charm.app.name),
         )
 
@@ -152,7 +152,7 @@ class TestCharm(unittest.TestCase):
             downstream_rel_id, self.harness.charm.app.name
         )
 
-        self.assertEqual([], list(relation_data.keys()))
+        self.assertEqual(['scrape_jobs'], list(relation_data.keys()))
         self.assertIsInstance(self.harness.model.unit.status, BlockedStatus)
 
     def test_charm_blocks_if_target_includes_path(self):
@@ -166,7 +166,7 @@ class TestCharm(unittest.TestCase):
             downstream_rel_id, self.harness.charm.app.name
         )
 
-        self.assertEqual([], list(relation_data.keys()))
+        self.assertEqual(['scrape_jobs'], list(relation_data.keys()))
         self.assertIsInstance(self.harness.model.unit.status, BlockedStatus)
 
     def test_charm_blocks_if_specified_port_invalid(self):
@@ -181,4 +181,4 @@ class TestCharm(unittest.TestCase):
         )
 
         self.assertIsInstance(self.harness.model.unit.status, BlockedStatus)
-        self.assertEqual({}, dict(relation_data))
+        self.assertEqual({'scrape_jobs': '[]'}, dict(relation_data))
