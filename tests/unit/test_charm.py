@@ -6,7 +6,7 @@
 import json
 import unittest
 
-from ops.model import ActiveStatus, BlockedStatus
+from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
 from ops.testing import Harness
 
 from charm import PrometheusScrapeTargetCharm
@@ -182,3 +182,11 @@ class TestCharm(unittest.TestCase):
 
         self.assertIsInstance(self.harness.model.unit.status, BlockedStatus)
         self.assertEqual({}, dict(relation_data))
+
+    def test_non_leader_unit_sets_waiting_status(self):
+        """Test units that are not leader are marked inactive."""
+        self.harness.set_leader(False)
+
+        self.harness.update_config({"targets": "https://192.186.1.0:1234"})
+
+        self.assertEqual(self.harness.model.unit.status, WaitingStatus("inactive unit"))
