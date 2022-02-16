@@ -27,7 +27,7 @@ class TestCharm(unittest.TestCase):
         downstream_rel_id = self.harness.add_relation("metrics-endpoint", "prometheus-k8s")
 
         self.assertEqual(
-            {},
+            {"scrape_jobs": "[]"},
             self.harness.get_relation_data(downstream_rel_id, self.harness.charm.app.name),
         )
 
@@ -152,7 +152,7 @@ class TestCharm(unittest.TestCase):
             downstream_rel_id, self.harness.charm.app.name
         )
 
-        self.assertEqual([], list(relation_data.keys()))
+        self.assertEqual({"scrape_jobs": "[]"}, relation_data)
         self.assertIsInstance(self.harness.model.unit.status, BlockedStatus)
 
     def test_charm_blocks_if_target_includes_path(self):
@@ -166,7 +166,7 @@ class TestCharm(unittest.TestCase):
             downstream_rel_id, self.harness.charm.app.name
         )
 
-        self.assertEqual([], list(relation_data.keys()))
+        self.assertEqual({"scrape_jobs": "[]"}, relation_data)
         self.assertIsInstance(self.harness.model.unit.status, BlockedStatus)
 
     def test_charm_blocks_if_specified_port_invalid(self):
@@ -181,7 +181,7 @@ class TestCharm(unittest.TestCase):
         )
 
         self.assertIsInstance(self.harness.model.unit.status, BlockedStatus)
-        self.assertEqual({}, dict(relation_data))
+        self.assertEqual({"scrape_jobs": "[]"}, dict(relation_data))
 
     def test_non_leader_unit_sets_waiting_status(self):
         """Test units that are not leader are marked inactive."""
@@ -190,3 +190,28 @@ class TestCharm(unittest.TestCase):
         self.harness.update_config({"targets": "https://192.186.1.0:1234"})
 
         self.assertEqual(self.harness.model.unit.status, WaitingStatus("inactive unit"))
+
+    def test_charm_removes_job_when_empty_targets_are_specified(self):
+        """Test the charm removes existing jobs and target list set to an empty value."""
+        self.harness.set_leader(True)
+
+        self.harness.update_config({"targets": "192.168.1.1:8000"})
+
+        downstream_rel_id = self.harness.add_relation("metrics-endpoint", "prometheus-k8s")
+        relation_data = self.harness.get_relation_data(
+            downstream_rel_id, self.harness.charm.app.name
+        )
+
+        expected_jobs = {
+            "scrape_jobs": '[{"job_name": '
+            '"juju_lma_e40bf1a_prometheus-scrape-target-k8s_external_jobs", '
+            '"static_configs": [{"targets": ["192.168.1.1:8000"]}]}]'
+        }
+
+        self.assertIsInstance(self.harness.model.unit.status, ActiveStatus)
+        self.assertEqual(expected_jobs, relation_data)
+
+        self.harness.update_config({"targets": ""})
+
+        self.assertIsInstance(self.harness.model.unit.status, BlockedStatus)
+        self.assertEqual({"scrape_jobs": "[]"}, dict(relation_data))
