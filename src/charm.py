@@ -30,7 +30,8 @@ def _validated_address(address: str) -> str:
 
     parsed = urlparse(address)
     if not parsed.netloc or any([parsed.scheme, parsed.path, parsed.params, parsed.query]):
-        logger.error("Invalid address (should only include netloc): %s", address)
+        logger.error("Invalid address : %s", address)
+        logger.error("Targets must be specified in host:port format")
         return ""
 
     # validate port
@@ -114,7 +115,8 @@ class PrometheusScrapeTargetCharm(CharmBase):
 
         if invalid_targets:
             logger.error("Invalid targets found: %s", invalid_targets)
-            self.unit.status = BlockedStatus(f"Invalid targets : {invalid_targets}")
+            logger.error("Targets must be specified in host:port format")
+            self.unit.status = BlockedStatus("Invalid targets, see debug-logs")
             return []
 
         return targets
@@ -138,8 +140,9 @@ class PrometheusScrapeTargetCharm(CharmBase):
                 invalid_labels.append(f"{key}:{value}")
 
         if invalid_labels:
-            self.unit.status = BlockedStatus(f"Invalid labels : {invalid_labels}")
-
+            logger.error("Invalid labels : %s", invalid_labels)
+            logger.error("Labels must be specified in key:value format")
+            self.unit.status = BlockedStatus("Invalid labels, see debug-logs")
         return labels
 
     def _job_name(self):
