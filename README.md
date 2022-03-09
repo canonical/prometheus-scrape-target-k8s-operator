@@ -17,7 +17,7 @@ $ juju deploy prometheus-scrape-target-k8s
 $ juju relate prometheus-k8s prometheus-scrape-target-k8s
 
 # Setup http://192.168.5.2:7000 as an external target
-juju config prometheus-scrape-target targets="http://192.168.5.2:7000"
+juju config prometheus-scrape-target targets="192.168.5.2:7000"
 ```
 
 ## Relations
