@@ -28,7 +28,9 @@ async def test_build_and_deploy(ops_test):
     await ops_test.model.deploy(charm_under_test, application_name="st")
 
     # deploy prometheus from edge
-    await ops_test.model.deploy("prometheus-k8s", application_name="prom", channel="edge")
+    await ops_test.model.deploy(
+        "prometheus-k8s", application_name="prom", channel="edge", trust=True
+    )
 
     # wait for charms to settle
     await ops_test.model.wait_for_idle(apps=["st", "prom"], timeout=1000)
