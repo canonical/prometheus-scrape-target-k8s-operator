@@ -16,7 +16,7 @@ jobs:
     - name: Install dependencies
       run: python3 -m pip install tox
     - name: Run static analysis
-      run: tox -vve static
+      run: tox -vve static-charm
 
   lint:
     name: Lint
