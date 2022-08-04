@@ -5,9 +5,15 @@ name: prometheus-scrape-target-k8s
 
 summary: |
   An integrator charm for external metrics endpoints.
+
 description: |
   The Prometheus scrape target operator allows metrics endpoints outside
   Juju to be scraped by the Prometheus charm.
+
+website: https://charmhub.io/prometheus-scrape-target-k8s
+source: https://github.com/canonical/prometheus-scrape-target-k8s-operator
+issues: https://github.com/canonical/prometheus-scrape-target-k8s-operator/issues
+
 provides:
   metrics-endpoint:
     interface: prometheus_scrape
