@@ -33,7 +33,7 @@ class TestCharm(unittest.TestCase):
 
         self.assertEqual(self.harness.model.unit.status, BlockedStatus("No targets specified"))
 
-    def test_non_leader_doesn_not_modify_realtion_data(self):
+    def test_non_leader_does_not_modify_relation_data(self):
         """Test no relation data changes if agent is not leader."""
         self.harness.set_leader(False)
 
