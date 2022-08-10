@@ -13,6 +13,7 @@ description: |
 website: https://charmhub.io/prometheus-scrape-target-k8s
 source: https://github.com/canonical/prometheus-scrape-target-k8s-operator
 issues: https://github.com/canonical/prometheus-scrape-target-k8s-operator/issues
+docs: https://discourse.charmhub.io/t/prometheus-scrape-target-k8s-operator-docs-index/6841
 
 provides:
   metrics-endpoint:
