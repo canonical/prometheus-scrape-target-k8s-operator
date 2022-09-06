@@ -80,7 +80,7 @@ class PrometheusScrapeTargetCharm(CharmBase):
         else:
             self.unit.status = BlockedStatus("No targets specified")
 
-    def _scrape_jobs(self) -> list:
+    def _scrape_jobs(self) -> list:  # noqa: C901
         if targets := self._targets():
             static_config = {"targets": targets}
             if labels := self._labels():
@@ -98,8 +98,13 @@ class PrometheusScrapeTargetCharm(CharmBase):
                 if value := self.model.config.get(option):
                     job.update({option: value})
 
-            if tls_config_ca_file := self.model.config.get("tls_config_ca_file"):
-                job.update({"tls_config": {"ca_file": tls_config_ca_file}})
+            tls_config = {}
+            if ca_file := self.model.config.get("tls_config_ca_file"):
+                tls_config.update({"ca_file": ca_file})
+            if insecure_skip_verify := self.model.config.get("tls_config_insecure_skip_verify"):
+                tls_config.update({"ca_file": insecure_skip_verify})
+            if tls_config:
+                job.update({"tls_config": tls_config})
 
             if basic_auth := self.model.config.get("basic_auth"):
                 try:

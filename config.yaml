@@ -28,3 +28,6 @@ options:
     # TODO: this should be removed after juju secrets are available
     description: dfdf
     type: string
+  tls_config_insecure_skip_verify:
+    description: dfdf
+    type: boolean
