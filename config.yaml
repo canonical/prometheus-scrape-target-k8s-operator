@@ -17,3 +17,14 @@ options:
   metrics_path:
     description: Metrics path for external jobs.
     type: string
+  scheme:
+    description: dfdf
+    type: string
+  basic_auth:
+    # TODO: this should be removed after juju secrets are available
+    description: username:password
+    type: string
+  tls_config_ca_file:
+    # TODO: this should be removed after juju secrets are available
+    description: dfdf
+    type: string

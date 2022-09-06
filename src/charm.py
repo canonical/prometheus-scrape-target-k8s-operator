@@ -91,10 +91,25 @@ class PrometheusScrapeTargetCharm(CharmBase):
                 "static_configs": [static_config],
             }
 
-            if metrics_path := self.model.config.get("metrics_path"):
-                # prometheus has a its own built-in default for metrics_path:
-                # [ metrics_path: <path> | default = /metrics ]
-                job.update(metrics_path=metrics_path)
+            for option in (
+                "metrics_path",  # prom's built-in default: [ metrics_path: <path> | default = /metrics ]
+                "scheme",
+            ):
+                if value := self.model.config.get(option):
+                    job.update({option: value})
+
+            if tls_config_ca_file := self.model.config.get("tls_config_ca_file"):
+                job.update({"tls_config": {"ca_file": tls_config_ca_file}})
+
+            if basic_auth := self.model.config.get("basic_auth"):
+                try:
+                    username, password = basic_auth.split(":")
+                except ValueError:
+                    self.unit.status = BlockedStatus(
+                        "Invalid basic_auth config option; use `user:password` format"
+                    )
+                else:
+                    job.update({"basic_auth": {"username": username, "password": password}})
 
             return [job]
 
