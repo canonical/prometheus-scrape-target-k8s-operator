@@ -102,7 +102,10 @@ class PrometheusScrapeTargetCharm(CharmBase):
             if ca_file := self.model.config.get("tls_config_ca_file"):
                 tls_config.update({"ca_file": ca_file})
             if insecure_skip_verify := self.model.config.get("tls_config_insecure_skip_verify"):
-                tls_config.update({"ca_file": insecure_skip_verify})
+                # Need to convert bool to lowercase str
+                tls_config.update(
+                    {"insecure_skip_verify": "true" if insecure_skip_verify else "false"}
+                )
             if tls_config:
                 job.update({"tls_config": tls_config})
 
