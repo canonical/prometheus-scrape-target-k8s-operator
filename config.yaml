@@ -17,3 +17,19 @@ options:
   metrics_path:
     description: Metrics path for external jobs.
     type: string
+  scheme:
+    description: Configures the protocol scheme prometheus uses for requests.
+    type: string
+  basic_auth:
+    # TODO: this should be removed after juju secrets are available
+    description: >
+      Sets the Authorization header prometheus uses on every scrape request.
+      The expected format is username:password.
+    type: string
+  tls_config_ca_file:
+    # TODO: this should be removed after juju secrets are available
+    description: CA certificate to validate API server certificate with.
+    type: string
+  tls_config_insecure_skip_verify:
+    description: Disable validation of the server certificate.
+    type: boolean
