@@ -215,3 +215,7 @@ class TestCharm(unittest.TestCase):
 
         self.assertIsInstance(self.harness.model.unit.status, BlockedStatus)
         self.assertEqual({"scrape_jobs": "[]"}, dict(relation_data))
+
+    def test_workload_version_is_set(self):
+        self.harness.charm._on_install(None)
+        self.assertEqual(self.harness.get_workload_version(), "n/a")
