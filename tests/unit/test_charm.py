@@ -215,3 +215,13 @@ class TestCharm(unittest.TestCase):
 
         self.assertIsInstance(self.harness.model.unit.status, BlockedStatus)
         self.assertEqual({"scrape_jobs": "[]"}, dict(relation_data))
+
+
+class TestCharmWithInitialHooks(unittest.TestCase):
+    def setUp(self):
+        self.harness = Harness(PrometheusScrapeTargetCharm)
+        self.addCleanup(self.harness.cleanup)
+        self.harness.begin_with_initial_hooks()
+
+    def test_workload_version_is_set(self):
+        self.assertEqual(self.harness.get_workload_version(), "n/a")

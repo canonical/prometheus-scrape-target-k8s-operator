@@ -65,6 +65,13 @@ class PrometheusScrapeTargetCharm(CharmBase):
         # handle changes in external scrape targets
         self.framework.observe(self.on.config_changed, self._update_prometheus_jobs)
 
+        # One time charm setup
+        self.framework.observe(self.on.install, self._on_install)
+
+    def _on_install(self, _) -> None:
+        """Initial charm setup."""
+        self.unit.set_workload_version("n/a")
+
     def _update_prometheus_jobs(self, _):
         """Setup Prometheus scrape configuration for external targets."""
         if not self.unit.is_leader():
