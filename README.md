@@ -1,5 +1,7 @@
 # Prometheus Scrape Target Operator
 
+[![Release to Edge](https://github.com/canonical/prometheus-scrape-target-k8s-operator/actions/workflows/release-edge.yaml/badge.svg)](https://github.com/canonical/prometheus-scrape-target-k8s-operator/actions/workflows/release-edge.yaml)
+
 ## Description
 
 The Prometheus Scrape Target operator supports metrics aggregation
