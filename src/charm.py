@@ -64,7 +64,7 @@ class PrometheusScrapeTargetCharm(CharmBase):
 
         # handle changes in external scrape targets
         self.framework.observe(self.on.config_changed, self._update_prometheus_jobs)
-        
+
         # Sometimes a `stop` event is followed by a `start` event with nothing in between
         # https://bugs.launchpad.net/juju/+bug/2015566
         self.framework.observe(self.on.start, self._update_prometheus_jobs)
