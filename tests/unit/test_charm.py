@@ -6,10 +6,9 @@
 import json
 import unittest
 
+from charm import PrometheusScrapeTargetCharm
 from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
 from ops.testing import Harness
-
-from charm import PrometheusScrapeTargetCharm
 
 
 class TestCharm(unittest.TestCase):
