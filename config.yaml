@@ -20,6 +20,10 @@ options:
   scheme:
     description: Configures the protocol scheme prometheus uses for requests.
     type: string
+  params:
+    description: >
+      Configures optional HTTP URL parameters as a key-value collection.
+    type: string
   basic_auth:
     # TODO: this should be removed after juju secrets are available
     description: >

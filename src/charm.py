@@ -10,6 +10,7 @@ import json
 import logging
 from urllib.parse import urlparse
 
+import yaml
 from ops.charm import CharmBase
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
@@ -108,6 +109,10 @@ class PrometheusScrapeTargetCharm(CharmBase):
             ):
                 if value := self.model.config.get(option):
                     job.update({option: value})
+
+            if params := self.model.config.get("params"):
+                val = yaml.safe_load(params)
+                job.update({"params": val})
 
             tls_config = {}
             if ca_file := self.model.config.get("tls_config_ca_file"):
