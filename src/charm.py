@@ -7,10 +7,10 @@
 """Prometheus Scrape Target Charm."""
 
 import json
-import yaml
 import logging
 from urllib.parse import urlparse
 
+import yaml
 from ops.charm import CharmBase
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
