@@ -5,35 +5,54 @@
 
 options:
   targets:
-    description: Comma separated list of external scrape targets, e.g., "192.168.5.2:7000,192.168.5.3:7000"; do not add the protocol!
     type: string
+    description: >
+      Comma separated list of external scrape targets, e.g., "192.168.5.2:7000,192.168.5.3:7000"; 
+      do not add the protocol!
   labels:
-    description: Comma separated list of label:value pairs.
     type: string
+    description: >
+      Comma separated list of label:value pairs.
   job_name:
-    description: Name of external scrape configuration jobs.
     type: string
     default: "external_jobs"
+    description: >
+      Name of external scrape configuration jobs.
   metrics_path:
-    description: Metrics path for external jobs.
     type: string
+    description: >
+      Metrics path for external jobs.
   scheme:
-    description: Configures the protocol scheme prometheus uses for requests.
     type: string
+    description: >
+      Configures the protocol scheme prometheus uses for requests.
   params:
     description: >
       Configures optional HTTP URL parameters as a key-value collection.
     type: string
   basic_auth:
-    # TODO: this should be removed after juju secrets are available
+    type: string
     description: >
       Sets the Authorization header prometheus uses on every scrape request.
       The expected format is username:password.
+  tls_config_key_file:
     type: string
+    description: >
+      Certificate key to request API server access with.
+  tls_config_cert_file:
+    type: string
+    description: >
+      Certificate to request API server access with.
+  tls_config_server_name:
+    type: string
+    description: >
+      Server name to access the API server with. Only relevant if the cert 
+      is not including it's name in the SANs.
   tls_config_ca_file:
-    # TODO: this should be removed after juju secrets are available
-    description: CA certificate to validate API server certificate with.
     type: string
+    description: >
+      CA certificate to validate API server certificate with.
   tls_config_insecure_skip_verify:
-    description: Disable validation of the server certificate.
     type: boolean
+    description: >
+      Disable validation of the server certificate.
