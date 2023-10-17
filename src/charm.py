@@ -96,7 +96,7 @@ class PrometheusScrapeTargetCharm(CharmBase):
         if targets := self._targets():
             static_config = {"targets": targets}
             if labels := self._labels():
-                static_config.update(labels=labels)
+                static_config.update(labels=labels)  # pyright: ignore
 
             job = {
                 "job_name": self._job_name(),
