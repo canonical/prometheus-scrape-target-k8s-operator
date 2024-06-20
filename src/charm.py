@@ -8,6 +8,7 @@
 
 import json
 import logging
+import typing
 from urllib.parse import urlparse
 
 import yaml
@@ -111,19 +112,19 @@ class PrometheusScrapeTargetCharm(CharmBase):
                     job.update({option: value})
 
             if params := self.model.config.get("params"):
-                val = yaml.safe_load(params)
+                val = yaml.safe_load(typing.cast(str, params))
                 job.update({"params": val})
 
             tls_config = {}
 
             if cert_file := self.model.config.get("tls_config_cert_file"):
-                tls_config.update({"cert_file": cert_file})
+                tls_config.update({"cert_file": typing.cast(str, cert_file)})
             if key_file := self.model.config.get("tls_config_key_file"):
-                tls_config.update({"key_file": key_file})
+                tls_config.update({"key_file": typing.cast(str, key_file)})
             if server_name := self.model.config.get("tls_config_server_name"):
-                tls_config.update({"server_name": server_name})
+                tls_config.update({"server_name": typing.cast(str, server_name)})
             if ca_file := self.model.config.get("tls_config_ca_file"):
-                tls_config.update({"ca_file": ca_file})
+                tls_config.update({"ca_file": typing.cast(str, ca_file)})
             if insecure_skip_verify := self.model.config.get("tls_config_insecure_skip_verify"):
                 # Need to convert bool to lowercase str
                 tls_config.update({"insecure_skip_verify": insecure_skip_verify})
@@ -133,7 +134,7 @@ class PrometheusScrapeTargetCharm(CharmBase):
 
             if basic_auth := self.model.config.get("basic_auth"):
                 try:
-                    username, password = basic_auth.split(":")
+                    username, password = typing.cast(str, basic_auth).split(":")
                 except ValueError:
                     self.unit.status = BlockedStatus(
                         "Invalid basic_auth config option; use `user:password` format"
@@ -152,6 +153,7 @@ class PrometheusScrapeTargetCharm(CharmBase):
 
         targets = []
         invalid_targets = []
+        unvalidated_scrape_targets = typing.cast(str, unvalidated_scrape_targets)
         for config_target in unvalidated_scrape_targets.split(","):
             if valid_address := _validated_address(config_target):
                 targets.append(valid_address)
@@ -172,6 +174,7 @@ class PrometheusScrapeTargetCharm(CharmBase):
 
         labels = {}
         invalid_labels = []
+        all_labels = typing.cast(str, all_labels)
         for label in all_labels.split(","):
             try:
                 key, value = label.split(":")
