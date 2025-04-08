@@ -1,15 +1,81 @@
 # Copyright 2021 Canonical Ltd.
 # See LICENSE file for licensing details.
-
+name: prometheus-scrape-target-k8s
 type: charm
-bases:
-  - build-on:
-    - name: "ubuntu"
-      channel: "20.04"
-    run-on:
-    - name: "ubuntu"
-      channel: "20.04"
+summary: An integrator charm for external metrics endpoints.
+description: |
+  The Prometheus scrape target operator allows metrics endpoints outside
+  Juju to be scraped by the Prometheus charm.
+
+platforms:
+  ubuntu@20.04:amd64:
+  ubuntu@24.04:amd64:
+
 parts:
   charm:
-    build-packages:
-    - git
+    source: .
+    plugin: uv
+    build-packages: [git]
+    build-snaps: [astral-uv]
+    override-build: |
+      craftctl default
+      git describe --always > $CRAFT_PART_INSTALL/version
+
+config:
+  options:
+    targets:
+      type: string
+      description: >
+        Comma separated list of external scrape targets, e.g., "192.168.5.2:7000,192.168.5.3:7000"; 
+        do not add the protocol!
+    labels:
+      type: string
+      description: >
+        Comma separated list of label:value pairs.
+    job_name:
+      type: string
+      default: "external_jobs"
+      description: >
+        Name of external scrape configuration jobs.
+    metrics_path:
+      type: string
+      description: >
+        Metrics path for external jobs.
+    scheme:
+      type: string
+      description: >
+        Configures the protocol scheme prometheus uses for requests.
+    params:
+      description: >
+        Configures optional HTTP URL parameters as a key-value collection.
+      type: string
+    params:
+      description: >
+        Configures optional HTTP URL parameters as a key-value collection.
+      type: string
+    basic_auth:
+      type: string
+      description: >
+        Sets the Authorization header prometheus uses on every scrape request.
+        The expected format is username:password.
+    tls_config_key_file:
+      type: string
+      description: >
+        Certificate key to request API server access with.
+    tls_config_cert_file:
+      type: string
+      description: >
+        Certificate to request API server access with.
+    tls_config_server_name:
+      type: string
+      description: >
+        Server name to access the API server with. Only relevant if the cert 
+        is not including it's name in the SANs.
+    tls_config_ca_file:
+      type: string
+      description: >
+        CA certificate to validate API server certificate with.
+    tls_config_insecure_skip_verify:
+      type: boolean
+      description: >
+        Disable validation of the server certificate.
