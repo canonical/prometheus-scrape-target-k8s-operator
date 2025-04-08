@@ -49,10 +49,6 @@ config:
       description: >
         Configures optional HTTP URL parameters as a key-value collection.
       type: string
-    params:
-      description: >
-        Configures optional HTTP URL parameters as a key-value collection.
-      type: string
     basic_auth:
       type: string
       description: >
