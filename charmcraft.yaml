@@ -21,6 +21,10 @@ parts:
       craftctl default
       git describe --always > $CRAFT_PART_INSTALL/version
 
+provides:
+  metrics-endpoint:
+    interface: prometheus_scrape
+
 config:
   options:
     targets:
