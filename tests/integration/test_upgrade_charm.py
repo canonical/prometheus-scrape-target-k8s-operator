@@ -23,7 +23,7 @@ app_name = METADATA["name"]
 async def test_config_values_are_retained_after_pod_upgraded(ops_test, charm_under_test):
     """Deploy from charmhub and then upgrade with the charm-under-test."""
     logger.info("deploy charm from charmhub")
-    sh.juju.deploy(app_name, model=ops_test.model.name, channel="1/edge")
+    sh.juju.deploy(app_name, model=ops_test.model.name, channel="2/edge")
 
     config = {"targets": "1.2.3.4:5678", "metrics_path": "/foometrics"}
     await ops_test.model.wait_for_idle(apps=[app_name], status="blocked", timeout=1000)
