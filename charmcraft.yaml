@@ -8,7 +8,7 @@ description: |
   Juju to be scraped by the Prometheus charm.
 
 platforms:
-  ubuntu@20.04:amd64:
+  ubuntu@24.04:amd64:
 
 parts:
   charm:
