@@ -4,8 +4,21 @@ name: prometheus-scrape-target-k8s
 type: charm
 summary: An integrator charm for external metrics endpoints.
 description: |
-  The Prometheus scrape target operator allows metrics endpoints outside
-  Juju to be scraped by the Prometheus charm.
+  Prometheus Scrape Target K8s is a workloadless Juju charm that enables Prometheus to scrape
+  metrics from endpoints outside of Juju models — such as bare-metal servers, VMs, or external
+  services. It is a complementary charm to the Canonical Observability Stack (COS):
+  https://documentation.ubuntu.com/observability
+
+  Target addresses are specified via Juju config and automatically registered as Prometheus
+  scrape jobs through the metrics-endpoint relation.
+
+  Key features:
+
+  - Register external metrics endpoints as Prometheus scrape targets without requiring a
+    charmed operator on the target.
+  - Configurable job name, metrics path, scheme, labels, and HTTP parameters.
+  - Basic authentication and TLS support for secure scraping of external endpoints.
+  - Workloadless charm — no additional containers or resources required.
 
 platforms:
   ubuntu@24.04:amd64:
