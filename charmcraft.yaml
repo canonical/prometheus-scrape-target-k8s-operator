@@ -10,7 +10,10 @@ description: |
   https://documentation.ubuntu.com/observability
 
   Target addresses are specified via Juju config and automatically registered as Prometheus
-  scrape jobs through the metrics-endpoint relation.
+  scrape jobs through the metrics-endpoint relation. Typically, one or more scrape-target
+  charms are related to a single scrape-config charm, which allows operators to override
+  scrape options — such as interval, timeout, and relabeling rules — before forwarding the
+  jobs to Prometheus.
 
   Key features:
 
