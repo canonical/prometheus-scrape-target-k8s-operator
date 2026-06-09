@@ -7,16 +7,16 @@ on:
       - track/**
 
 permissions:
-  # Required for all workflows
+  # Required for CodeQL security scanning
   security-events: write
-  # Only required for workflows in private repositories
+  # Required for private repositories
   actions: read
   # Write permission needed for the reusable workflow to push git tags
   contents: write
 
 jobs:
   release:
-    uses: canonical/observability/.github/workflows/charm-release.yaml@v1
+    uses: canonical/observability/.github/workflows/charm-release.yaml@v2
     secrets: inherit
     with:
       default-track: dev
