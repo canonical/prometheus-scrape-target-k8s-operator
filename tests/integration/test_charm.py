@@ -32,7 +32,11 @@ def test_build_and_deploy(juju: Juju, charm: pathlib.Path):
 
     # wait for charms to settle; without any config, the charm should be blocked
     juju.wait(
-        lambda status: jubilant.all_blocked(status, "st") and jubilant.all_active(status, "prom"),
+        lambda status: (
+            jubilant.all_blocked(status, "st")
+            and jubilant.all_active(status, "prom")
+            and jubilant.all_agents_idle(status, "st", "prom")
+        ),
         timeout=1000,
     )
 
@@ -40,7 +44,12 @@ def test_build_and_deploy(juju: Juju, charm: pathlib.Path):
 @pytest.mark.abort_on_fail
 def test_unconfigured_scrape_config_does_not_affect_prometheus(juju: Juju):
     juju.integrate("prom:metrics-endpoint", "st:metrics-endpoint")
-    juju.wait(lambda status: jubilant.all_active(status, "prom"), timeout=1000)
+    juju.wait(
+        lambda status: (
+            jubilant.all_active(status, "prom") and jubilant.all_agents_idle(status, "prom", "st")
+        ),
+        timeout=1000,
+    )
 
 
 @pytest.mark.abort_on_fail
@@ -50,7 +59,13 @@ def test_scrape_config_is_ingested_by_prometheus(juju: Juju):
     log.debug("prom public address: %s", url)
 
     juju.config("st", {"targets": "1.2.3.4"})
-    juju.wait(lambda status: jubilant.all_active(status, "prom", "st"), timeout=1000)
+    juju.wait(
+        lambda status: (
+            jubilant.all_active(status, "prom", "st")
+            and jubilant.all_agents_idle(status, "prom", "st")
+        ),
+        timeout=1000,
+    )
 
     def get_prom_config(url: str) -> dict:
         response = urllib.request.urlopen(f"{url}/api/v1/status/config", data=None, timeout=10.0)
@@ -101,7 +116,13 @@ def test_scrape_config_is_ingested_by_prometheus(juju: Juju):
 
     # update config and retest
     juju.config("st", {"targets": "1.2.3.4:5678", "metrics_path": "/foometrics"})
-    juju.wait(lambda status: jubilant.all_active(status, "prom", "st"), timeout=1000)
+    juju.wait(
+        lambda status: (
+            jubilant.all_active(status, "prom", "st")
+            and jubilant.all_agents_idle(status, "prom", "st")
+        ),
+        timeout=1000,
+    )
 
     scrape_configs = get_prom_config(url)["scrape_configs"]
     ours = list(

@@ -32,12 +32,27 @@ def test_config_values_are_retained_after_pod_upgraded(juju: Juju, charm: pathli
     juju.deploy(app_name, channel="2/edge")
 
     config = {"targets": "1.2.3.4:5678", "metrics_path": "/foometrics"}
-    juju.wait(lambda status: jubilant.all_blocked(status, app_name), timeout=1000)
+    juju.wait(
+        lambda status: (
+            jubilant.all_blocked(status, app_name) and jubilant.all_agents_idle(status, app_name)
+        ),
+        timeout=1000,
+    )
     juju.config(app_name, config)
-    juju.wait(lambda status: jubilant.all_active(status, app_name), timeout=1000)
+    juju.wait(
+        lambda status: (
+            jubilant.all_active(status, app_name) and jubilant.all_agents_idle(status, app_name)
+        ),
+        timeout=1000,
+    )
 
     logger.info("upgrade deployed charm with local charm %s", charm)
     juju.refresh(app_name, path=str(charm))
-    juju.wait(lambda status: jubilant.all_active(status, app_name), timeout=1000)
+    juju.wait(
+        lambda status: (
+            jubilant.all_active(status, app_name) and jubilant.all_agents_idle(status, app_name)
+        ),
+        timeout=1000,
+    )
 
     assert get_config_values(juju, app_name).items() >= config.items()
