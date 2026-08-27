@@ -2,16 +2,16 @@
 # Copyright 2021 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+from __future__ import annotations
 
 import logging
-from pathlib import Path
+import pathlib
 
+import jubilant
 import pytest
-import sh
 import yaml
 from helpers import get_config_values
-
-# pyright: reportAttributeAccessIssue = false
+from jubilant import Juju
 
 # Cross-base upgrades (e.g. 24.04 -> 26.04) are not supported via juju refresh.
 # The charmhub charm is built for 24.04 (Python 3.12), while the local charm
@@ -21,23 +21,23 @@ pytestmark = pytest.mark.skip(reason="Cross-base upgrade from 24.04 to 26.04 not
 
 logger = logging.getLogger(__name__)
 
-METADATA = yaml.safe_load(Path("./charmcraft.yaml").read_text())
+METADATA = yaml.safe_load(pathlib.Path("./charmcraft.yaml").read_text())
 app_name = METADATA["name"]
 
 
 @pytest.mark.abort_on_fail
-async def test_config_values_are_retained_after_pod_upgraded(ops_test, charm_under_test):
+def test_config_values_are_retained_after_pod_upgraded(juju: Juju, charm: pathlib.Path):
     """Deploy from charmhub and then upgrade with the charm-under-test."""
     logger.info("deploy charm from charmhub")
-    sh.juju.deploy(app_name, model=ops_test.model.name, channel="2/edge")
+    juju.deploy(app_name, channel="2/edge")
 
     config = {"targets": "1.2.3.4:5678", "metrics_path": "/foometrics"}
-    await ops_test.model.wait_for_idle(apps=[app_name], status="blocked", timeout=1000)
-    await ops_test.model.applications[app_name].set_config(config)
-    await ops_test.model.wait_for_idle(apps=[app_name], status="active", timeout=1000)
+    juju.wait(lambda status: jubilant.all_blocked(status, app_name), timeout=1000)
+    juju.config(app_name, config)
+    juju.wait(lambda status: jubilant.all_active(status, app_name), timeout=1000)
 
-    logger.info("upgrade deployed charm with local charm %s", charm_under_test)
-    sh.juju.refresh(app_name, model=ops_test.model.name, path=charm_under_test)
-    await ops_test.model.wait_for_idle(apps=[app_name], status="active", timeout=1000)
+    logger.info("upgrade deployed charm with local charm %s", charm)
+    juju.refresh(app_name, path=str(charm))
+    juju.wait(lambda status: jubilant.all_active(status, app_name), timeout=1000)
 
-    assert (await get_config_values(ops_test, app_name)).items() >= config.items()
+    assert get_config_values(juju, app_name).items() >= config.items()

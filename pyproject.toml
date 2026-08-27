@@ -21,8 +21,8 @@ dev = [
   "coverage[toml]",
   "responses",
   # Integration
-  "juju",
-  "pytest-operator",
+  "jubilant",
+  "pytest-jubilant>=2",
   "sh",
 ]
 
@@ -56,7 +56,6 @@ pythonPlatform = "All"
 [tool.pytest.ini_options]
 minversion = "6.0"
 log_cli_level = "INFO"
-asyncio_mode = "auto"
 addopts = "--tb=native --verbose --capture=no --log-cli-level=INFO"
 
 [tool.codespell]

@@ -2,61 +2,55 @@
 # Copyright 2021 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+from __future__ import annotations
 
 import json
 import logging
+import pathlib
 import urllib.request
-from pathlib import Path
 
+import jubilant
 import pytest
 import yaml
-from helpers import get_unit_address
+from jubilant import Juju
 
 log = logging.getLogger(__name__)
 
-METADATA = yaml.safe_load(Path("./charmcraft.yaml").read_text())
+METADATA = yaml.safe_load(pathlib.Path("./charmcraft.yaml").read_text())
 
 
 @pytest.mark.abort_on_fail
-async def test_build_and_deploy(ops_test):
-    """Build the charm-under-test and deploy it together with related charms.
+def test_build_and_deploy(juju: Juju, charm: pathlib.Path):
+    """Deploy the charm-under-test together with related charms.
 
     Assert on the unit status before any relations/configurations take place.
     """
-    # build and deploy charm from local source folder
-    charm_under_test = await ops_test.build_charm(".")
-    await ops_test.model.deploy(charm_under_test, application_name="st")
+    juju.deploy(charm, app="st")
 
     # deploy prometheus from dev/edge
-    await ops_test.model.deploy(
-        "prometheus-k8s", application_name="prom", channel="dev/edge", trust=True
+    juju.deploy("prometheus-k8s", app="prom", channel="dev/edge", trust=True)
+
+    # wait for charms to settle; without any config, the charm should be blocked
+    juju.wait(
+        lambda status: jubilant.all_blocked(status, "st") and jubilant.all_active(status, "prom"),
+        timeout=1000,
     )
-
-    # wait for charms to settle
-    await ops_test.model.wait_for_idle(apps=["st", "prom"], timeout=1000)
-
-    # without any config, the charm should be blocked
-    assert ops_test.model.applications["st"].units[0].workload_status == "blocked"
 
 
 @pytest.mark.abort_on_fail
-async def test_unconfigured_scrape_config_does_not_affect_prometheus(ops_test):
-    # relate prometheus to this charm
-    await ops_test.model.applications["prom"].add_relation(
-        "metrics-endpoint", "st:metrics-endpoint"
-    )
-    await ops_test.model.wait_for_idle(apps=["prom"], status="active", timeout=1000)
-    assert ops_test.model.applications["prom"].units[0].workload_status == "active"
+def test_unconfigured_scrape_config_does_not_affect_prometheus(juju: Juju):
+    juju.integrate("prom:metrics-endpoint", "st:metrics-endpoint")
+    juju.wait(lambda status: jubilant.all_active(status, "prom"), timeout=1000)
 
 
 @pytest.mark.abort_on_fail
-async def test_scrape_config_is_ingested_by_prometheus(ops_test):
-    address = await get_unit_address(ops_test, "prom", 0)
+def test_scrape_config_is_ingested_by_prometheus(juju: Juju):
+    address = juju.status().apps["prom"].units["prom/0"].address
     url = f"http://{address}:9090"
     log.debug("prom public address: %s", url)
 
-    await ops_test.model.applications["st"].set_config({"targets": "1.2.3.4"})
-    await ops_test.model.wait_for_idle(apps=["prom", "st"], status="active")
+    juju.config("st", {"targets": "1.2.3.4"})
+    juju.wait(lambda status: jubilant.all_active(status, "prom", "st"), timeout=1000)
 
     def get_prom_config(url: str) -> dict:
         response = urllib.request.urlopen(f"{url}/api/v1/status/config", data=None, timeout=10.0)
@@ -106,16 +100,15 @@ async def test_scrape_config_is_ingested_by_prometheus(ops_test):
     assert len(ours) == 1
 
     # update config and retest
-    await ops_test.model.applications["st"].set_config(
-        {"targets": "1.2.3.4:5678", "metrics_path": "/foometrics"}
-    )
-    await ops_test.model.wait_for_idle(apps=["prom", "st"], status="active")
+    juju.config("st", {"targets": "1.2.3.4:5678", "metrics_path": "/foometrics"})
+    juju.wait(lambda status: jubilant.all_active(status, "prom", "st"), timeout=1000)
 
-    scrape_configs: list = get_prom_config(url)["scrape_configs"]
+    scrape_configs = get_prom_config(url)["scrape_configs"]
     ours = list(
         filter(
-            lambda scrape_config: scrape_config["static_configs"][0]["targets"]
-            == ["1.2.3.4:5678"],
+            lambda scrape_config: (
+                scrape_config["static_configs"][0]["targets"] == ["1.2.3.4:5678"]
+            ),
             scrape_configs,
         )
     )
