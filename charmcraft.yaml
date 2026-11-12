@@ -73,6 +73,10 @@ config:
       description: >
         Sets the Authorization header prometheus uses on every scrape request.
         The expected format is username:password.
+    bearer_token:
+      type: string
+      description: >
+        To configure bearer token authentication for the prometheus scrape job.
     tls_config_key_file:
       type: string
       description: >
