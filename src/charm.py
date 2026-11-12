@@ -132,6 +132,16 @@ class PrometheusScrapeTargetCharm(CharmBase):
             if tls_config:
                 job.update({"tls_config": tls_config})
 
+            if bearer_token := self.model.config.get("bearer_token"):
+                try:
+                    bearer_token = typing.cast(str, bearer_token)
+                except ValueError:
+                    self.unit.status = BlockedStatus(
+                        "Invalid bearer_token config option;"
+                    )
+                else:
+                    job.update({"authorization": {"type": "Bearer", "credentials": bearer_token}})
+
             if basic_auth := self.model.config.get("basic_auth"):
                 try:
                     username, password = typing.cast(str, basic_auth).split(":")
