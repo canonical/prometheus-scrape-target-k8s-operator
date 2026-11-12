@@ -76,7 +76,9 @@ config:
     bearer_token:
       type: string
       description: >
-        To configure bearer token authentication for the prometheus scrape job.
+        Sets the bearer token that prometheus sends in the Authorization header
+        on every scrape request. Provide the token only, without the "Bearer "
+        prefix. Cannot be combined with basic_auth.
     tls_config_key_file:
       type: string
       description: >
